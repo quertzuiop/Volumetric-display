@@ -40,10 +40,6 @@ volatile unsigned *gpio;
 int addressPins[] = {22, 23, 24, 25, 15};
 list<int> initializedPins;
 
-void pushColor(bool r, bool g, bool b) {
-
-}
-
 void setAddress(int address) {
     for (int i = 0; i < 5; i++) {
         if ((address>>i)%2==1) {
@@ -87,6 +83,96 @@ static void busy_wait_nanos(long nanos) {
 	}
 }
 
+static void tiny_wait(int n) {
+    volatile int sink=0;
+    for (int j = 0; j<n; ++j) {
+        sink += j;
+    }
+}
+class ColorGroupInterface { //controls color pins and clock 
+    public:
+        uint8_t pinNums[6];
+        uint8_t clockPinNum;
+        inline void pushColor(uint8_t c1, uint8_t c2) {
+            int regVal = ((c1 & 1)<<pinNums[0]) | ((c1>>1 & 1)<<pinNums[1]) | ((c1>>2 & 1)<<pinNums[2])
+                        | ((c2 & 1)<<pinNums[3]) | ((c2>>1 & 1)<<pinNums[4]) | ((c2>>2 & 1)<<pinNums[5]);
+            GPIO_SET = regVal;
+            GPIO_SET = (1<<clockPinNum);
+            tiny_wait(10);
+            GPIO_CLR = regVal | (1<<clockPinNum);
+            tiny_wait(5);
+        }
+    ColorGroupInterface (int ColorPins[6], int clockPin) {
+        for (int i = 0; i < 6; i++) {
+            pinNums[i] = ColorPins[i];
+        }
+        clockPinNum=clockPin;
+        for (int pin: pinNums) {
+            pinInit(pin);
+        }
+        pinInit(clockPinNum);
+    }
+};
+class AddressInterface {
+    public:
+        int addressPins[5];
+        inline void setAddress(int address) {
+            for (int i = 0; i < 5; i++) {
+                if ((address>>i)%2==1) {
+                    GPIO_SET = (1<<addressPins[i]);
+                }
+                else {
+                    GPIO_CLR = (1<<addressPins[i]);
+                }
+            }
+        }
+    AddressInterface(int pins[5]) {
+        for (int i = 0; i < 5; i++) {
+            addressPins[i] = pins[i];
+            pinInit(addressPins[i]);
+        }
+    }
+};
+class OutputInterface {
+    public:
+        int latchPin, oePin;
+        inline void show() {
+            GPIO_SET = (1<<latchPin);
+            tiny_wait(10);
+            GPIO_CLR = (1<<latchPin);
+            tiny_wait(5);
+            GPIO_CLR = (1<<oePin);
+            busy_wait_nanos(2000); //visible time
+            GPIO_SET = (1<<oePin);
+        }
+    OutputInterface(int latchPin_, int oePin_) {
+        latchPin = latchPin_;
+        oePin = oePin_;
+        pinInit(latchPin);
+        pinInit(oePin, true);
+    }
+};
+class PinInterface {
+    public:
+        int pinNum;
+        bool value;
+        void on() {
+            GPIO_SET = (1<<pinNum);
+            value=true;
+        }
+        void off() {
+            GPIO_CLR = (1<<pinNum);
+            value=false;
+        }
+    PinInterface(int pinNum_) {
+        if (pinNum <= 27  and pinNum >= 0) {
+            pinNum=pinNum_;
+            pinInit(pinNum_);
+        } else {
+            cout << "failed to initialize pin " << pinNum <<endl;
+        }
+    }
+};
 int main(int argc, char **argv)
 {   
     cpu_set_t cpus;
@@ -99,51 +185,27 @@ int main(int argc, char **argv)
     cout << "Raspberry Pi GPIO test program" << endl;
     setup_io();
     cout << "GPIO setup done: " << (void*)gpio << endl;
-    for (int a = 0; a < 5; a++) {
-        pinInit(addressPins[a]);
-    }
-    pinInit(11); //r1
-    pinInit(4); //latch
-    pinInit(17); //clock
-    pinInit(18, true); //oe
 
-    pinInit(8); //other color pins
-    pinInit(27);
-    pinInit(9);
-    pinInit(7);
-    pinInit(10);
+    ColorGroupInterface colorGroup(new int[6]{11, 27, 7, 8, 9, 10}, 17);
+    AddressInterface addressInterface(new int[5]{22, 23, 24, 25, 15});
+    OutputInterface outputInterface(4, 18);
 
-    const int frames = 10000;
+    const int frames = 20000;
 
     // Main loop, measure one timestamp per frame (in microseconds)
     auto frame_start = steady_clock::now();
     for (int i = 0; i < frames; i++) {
-
         for (int a = 0; a < 32; a++) {
             auto frame_start = steady_clock::now();
-            setAddress(a);
+            addressInterface.setAddress(a);
             for (int px = 0; px < 64; px++) {
                 if (px <32) {
-                    GPIO_SET = (1<<11);
+                    colorGroup.pushColor(0b100, 0b000);
                 } else {
-                    GPIO_SET = (1<<9);
+                    colorGroup.pushColor(0b000, 0b001);
                 }
-                GPIO_SET = (1<<17); //clk on
-                busy_wait_nanos(50);
-                GPIO_CLR = (1<<11) | (1<<9) | (1<<17); //r1 and clk off
-                busy_wait_nanos(50);
-                GPIO_SET = (1<<4); //latch on
-                busy_wait_nanos(0);
-                GPIO_CLR = (1<<4); //latch off, oe off (on)
             }
-            //busy_wait_nanos(0);
-            GPIO_CLR = (1<<18);
-            busy_wait_nanos(500);
-            GPIO_SET = (1<<18); //oe on (off)
-            //;
-            //auto dur_us = (uint32_t)duration_cast<nanoseconds>(frame_end - frame_start).count();
-            //if (dur_us > 100000) {cout<<"konec"<<endl;}
-            //samples_us.push_back(dur_us);
+            outputInterface.show();
         }
        
     }
