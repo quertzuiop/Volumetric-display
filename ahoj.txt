@@ -1,0 +1,45 @@
+int main(int argc, char **argv)
+{   
+    cpu_set_t cpus;
+    CPU_ZERO(&cpus);
+    CPU_SET(3, &cpus);
+    if (sched_setaffinity(0, sizeof(cpus), &cpus) != 0) {
+        cerr << "sched_setaffinity failed: " << strerror(errno) << " (continuing)\n";
+    }
+
+    cout << "Raspberry Pi GPIO test program" << endl;
+    setup_io();
+    cout << "GPIO setup done: " << (void*)gpio << endl;
+
+    ColorGroupInterface colorGroup(new int[6]{11, 27, 7, 8, 9, 10}, 17);
+    AddressInterface addressInterface(new int[5]{22, 23, 24, 25, 15});
+    OutputInterface outputInterface(4, 18);
+
+    const int frames = 20000;
+
+    // Main loop, measure one timestamp per frame (in microseconds)
+    auto frame_start = steady_clock::now();
+    for (int i = 0; i < frames; i++) {
+        for (int a = 0; a < 32; a++) {
+            auto frame_start = steady_clock::now();
+            addressInterface.setAddress(a);
+            GPIO_CLR = (1<<18); //disable output
+            for (int px = 0; px < 64; px++) {
+                if (px <32) {
+                    colorGroup.pushColor(0b100, 0b000);
+                } else {
+                    colorGroup.pushColor(0b000, 0b001*px%3);
+                }
+            }
+            outputInterface.show();
+        }
+       
+    }
+    auto frame_end = steady_clock::now();
+    auto fps = (double)frames / ((double)duration_cast<milliseconds>(frame_end - frame_start).count() / 1000.0);
+    cout << "fps: " << fps << endl;
+    cout << "displaycols " << (fps / 64 * 24) <<endl;;
+    cleanup();
+    cout << "GPIO unmap done." << endl;
+    return 0;
+}
