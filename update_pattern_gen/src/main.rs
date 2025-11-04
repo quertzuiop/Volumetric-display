@@ -45,10 +45,13 @@ impl Point{
             return Point::new(x, y, z)
         }
     }
-    fn nearest_point(&self, points: &Vec<Point>) -> f64 {
+    fn nearest_point(&self, points: &Vec<Point>, normal: &Point, normals: &Vec<Point>) -> f64 {
         let mut nearest_distance = f64::MAX;
-        for point in points.iter() {
-            let distance = self.distance(point);
+        for i in 0..points.len() {
+            if normal.dot(&normals[i]) < 0.0 {
+                continue;
+            }
+            let distance = self.distance(&points[i]);
             if distance < nearest_distance {
                 nearest_distance = distance;
             }
@@ -64,6 +67,9 @@ impl Point{
         } else {
             return Point::new(-angle.sin(), angle.cos(), 0.0);
         }
+    }
+    fn dot(&self, other: &Point) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 }
 
@@ -99,15 +105,16 @@ fn write_to_file(path: &str, best: &Vec<(i32, Best)>) -> Result<()> {
 
 fn write_pointcloud_to_file(path: &str, points: &Vec<Point>, normals: &Vec<Point>) -> Result<()> {
     let mut file = File::create(path)?;
+    let height: i32 = 64;
     writeln!(file, "ply\nformat ascii 1.0")?;
-    writeln!(file, "element vertex {}", points.len()*64)?;
+    writeln!(file, "element vertex {}", points.len() as i32 * height)?;
     writeln!(file, "property float x\nproperty float y\nproperty float z")?;
     writeln!(file, "property float nx\nproperty float ny\nproperty float nz")?;
     writeln!(file, "end_header")?;
     for i in 0..points.len() {
         let pt = points[i];
         let normal = normals[i];
-        for j in 0..64 {
+        for j in 0..height {
             write!(file, "{} {} {} ", pt.x, pt.y, pt.z+j as f64)?;
             writeln!(file, "{} {} {}", normal.x, normal.y, normal.z)?;
         }
@@ -145,6 +152,8 @@ fn main() {
 
     for frame in r {
         let angle = (frame as f64) / (NCOLLS as f64) * PI * 2.0;
+        let normal1 = Point::normal(true, angle);
+        let normal2 = Point::normal(false, angle);
         
         let best_choice = (0..(1<<10 as i32)).into_par_iter().map(|index_encoded| {
             let index1 = index_encoded >> 5;
@@ -173,20 +182,21 @@ fn main() {
                 let mut score: f64 = 0.0;
                 for ptgroup in [&pts1, &pts2].iter() {
                     let dist_f = if ptgroup == &&pts1 {10.0} else {0.0};
+                    let normal = if ptgroup == &&pts1 {&normal1} else {&normal2};
                     if ptgroup.iter().all(|p| p.x == 0.0 && p.y == 0.0) {
                         continue;
                     }
                     if pts.len() == 0 {
-                        score += 1000.0;
+                        score += 1000.0; //first frame, dont care what happens
                         continue;
                     }
                     if ptgroup.len() == 1 {
                         let pt = ptgroup[0];
-                        score += pt.nearest_point(&pts).powf(2.0) * (dist_f + pt.dist_to_origin().powf(1.2));
+                        score += pt.nearest_point(&pts, normal, &normals).powf(2.0) * (dist_f + pt.dist_to_origin().powf(1.2));
                         //println!("base {}, origin {}", pt.nearest_point(&pts).powf(2.0), pt.dist_to_origin()*10.0);
                     }
                     else {
-                        score += ptgroup.iter().map(|p| p.nearest_point(&pts).powf(2.0) * (dist_f + p.dist_to_origin().powf(1.2))).sum::<f64>() * 0.9;
+                        score += ptgroup.iter().map(|p| p.nearest_point(&pts, normal, &normals).powf(2.0) * (dist_f + p.dist_to_origin().powf(1.2))).sum::<f64>() * 0.9;
                     }
 
                 }
@@ -221,43 +231,17 @@ fn main() {
             draw_filled_circle_mut(&mut img, (img_x as i32, img_y as i32), 2, color);
         }
     }
-    // Histogram analysis
-    let num_bins = 20; // Adjustable
-    let max_radius = 32.0; // Half of max diameter (~34)
-    let bin_width = max_radius / num_bins as f64;
 
-    let mut bin_counts = vec![0; num_bins];
-    let mut bin_areas = vec![0.0; num_bins];
+    let mut sum: f64 = 0.0;
 
-    // Calculate bin areas (annulus areas)
-    for i in 0..num_bins {
-        let r_inner = i as f64 * bin_width;
-        let r_outer = (i + 1) as f64 * bin_width;
-        bin_areas[i] = std::f64::consts::PI * (r_outer * r_outer - r_inner * r_inner);
+    for i in 0..pts.len() {
+        let other_pts = [&pts[..i], &pts[i+1..]].concat();
+        sum += pts[i].nearest_point(&other_pts, &normals[i], &normals);
+        // println!("{}", pts[i].nearest_point(&other_pts, &normals[i], &normals));
     }
+    let avg = sum / pts.len() as f64;
+    println!("Average: {}", avg * PITCH as f64);
 
-    // Count points in each bin
-    for pt in &pts {
-        let r = pt.dist_to_origin();
-        let bin_idx = (r / bin_width).floor() as usize;
-        if bin_idx < num_bins {
-            bin_counts[bin_idx] += 1;
-        }
-    }
-
-    // Calculate and print density vs expected
-    let total_points = pts.len() as f64;
-    let total_area: f64 = bin_areas.iter().sum();
-
-    println!("\nBin | Actual Density | Expected Density | Ratio");
-    println!("----+----------------+------------------+-------");
-    for i in 0..num_bins {
-        let actual_density = bin_counts[i] as f64 / bin_areas[i];
-        let expected_density = total_points / total_area;
-        let ratio = actual_density / expected_density;
-        println!("{:3} | {:14.4} | {:16.4} | {:5.2}", 
-                i, actual_density, expected_density, ratio);
-    }
 
     save_img(&img, "output.png").expect("Unable to save image");
     write_to_file("output.txt", &best_choices).expect("Unable to write to file");
