@@ -1,3 +1,4 @@
-.vscode/*
+.vscode/
 ahoj.txt
 target/
+settings.json
