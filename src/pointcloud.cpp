@@ -17,8 +17,24 @@ typedef struct {
     float z;
 } vertex;
 
+struct color {
+    bool r;
+    bool g;
+    bool b;
+};
+
+
 vertex operator-(const vertex& a, const vertex& b) {
     return { a.x - b.x, a.y - b.y, a.z - b.z };
+}
+vertex operator+(const vertex& a, const vertex& b) {
+    return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+vertex operator-(const vertex& v, float d) { // subtract vector (d, d, d)
+    return { v.x - d, v.y - d, v.z - d };
+}
+vertex operator+(const vertex& v, float d) { // add vector (d, d, d)
+    return { v.x + d, v.y + d, v.z + d };
 }
 vertex operator*(const vertex& v, float s) {
     return { v.x * s, v.y * s, v.z * s};
@@ -87,8 +103,20 @@ point transform(const point& pt, float dx = 0, float dy = 0, float dz = 0, float
     return { transform(pt.first, dx, dy, dz, scale), pt.second };
 }
 
+tuple<vertex, vertex> arrangeBoundingBox(const vertex& p1, const vertex& p2) {
+    return { {
+        min(p1.x, p2.x),
+        min(p1.y, p2.y),
+        min(p1.z, p2.z),
+    }, {
+        max(p1.x, p2.x),
+        max(p1.y, p2.y),
+        max(p1.z, p2.z),
+    } };
+}
+
 int getTime() {
-    return chrono::duration_cast<chrono::milliseconds> (chrono::system_clock::now().time_since_epoch()).count();
+    return chrono::duration_cast<chrono::microseconds> (chrono::system_clock::now().time_since_epoch()).count();
 }
 
 int calculateIndex(const gridData& gridData, const vertex& ptCoords) {
@@ -227,23 +255,24 @@ vector<float> extractPointCloudData(string str, int nDataPoints = 6) {
     } res.push_back(stof(str.substr(pos_start)));
     return res; 
 }
-ptCloud drawPoint(
-    const vertex& ptCoords,
+ptCloud drawParticle( //can have parts cut off, points sampled from 1 cell
+    const vertex& pos,
     const unordered_map<int, ptCloud>& mapping, 
     const gridData& gridData, 
     float radius, bool useMnht=false
 ){
-    int index = calculateIndex(gridData, ptCoords);
+    int index = calculateIndex(gridData, pos);
     auto it = mapping.find(index);
     if (it == mapping.end()) return {};
     const ptCloud& bucket = it->second;
 
+    float radius2 = radius * radius;
     ptCloud res;
 
     for (const point& potentialPt : bucket) {
         vertex potentialPtCoords = potentialPt.first;
-        double d = dist(ptCoords, potentialPtCoords);
-        if (d <= radius) res.push_back(potentialPt);
+        double d2 = dist2(pos, potentialPtCoords);
+        if (d2 <= radius2) res.push_back(potentialPt);
     }
     return res;
 }
@@ -260,16 +289,9 @@ ptCloud drawLine(
     float radius2 = radius * radius;
 
     vertex vec = end - start;
-    vertex minV = {
-        min(start.x, end.x),
-        min(start.y, end.y),
-        min(start.z, end.z),
-    };
-    vertex maxV = {
-        max(start.x, end.x),
-        max(start.y, end.y),
-        max(start.z, end.z),
-    };
+
+    auto [minV, maxV] = arrangeBoundingBox(start, end);
+    
     auto bucketIndices = calculateIndicesFromBB(gridData, minV, maxV, radius);
 
     ptCloud res;
@@ -282,10 +304,10 @@ ptCloud drawLine(
             const vertex& ptCoords = pt.first;
             vertex v1 = start - ptCoords;
 
-            float d1 = dist(ptCoords, start);
-            float d2 = dist(ptCoords, end);
+            //float d12 = dist(ptCoords, start);
+            //float d22 = dist(ptCoords, end);
 
-            if (d1 + d2 > length + radius) continue; // discard point outside ellipsoid
+            //if (d1 + d2 > length + radius) continue; // discard point outside ellipsoid
             float dSquared = magnitude_2(cross(vec, v1)) / length2;
 
             if (dSquared <= radius2) {
@@ -360,6 +382,73 @@ ptCloud drawTriangle(
                 d2 = pow(dot(normal, p1), 2) /magNormal;
             }
             if (d2 < radius2) res.push_back(pt);
+        }
+    }
+    return res;
+}
+
+ptCloud drawSphere( //untested
+    const vertex& pos,
+    const unordered_map<int, ptCloud>& mapping,
+    const gridData& gridData,
+    float radius, float thickness = 0.
+) {
+    vertex minV = pos - radius;
+    vertex maxV = pos + radius;
+
+    auto bucketIndices = calculateIndicesFromBB(gridData, minV, maxV, radius);
+    ptCloud res;
+
+    float radius2 = radius * radius;
+
+    for (int bucketIndex : bucketIndices) {
+        auto it = mapping.find(bucketIndex);
+        if (it == mapping.end()) return {};
+        const ptCloud& bucket = it->second;
+
+        for (const point& pt : bucket) {
+            const vertex& ptCoords = pt.first;
+            float d2 = dist2(ptCoords, pos);
+            if (thickness > 0 && d2 < (2 * radius * thickness - radius2)) continue; // magic math supr
+            if (d2 < radius2) res.push_back(pt);
+        }
+    }
+}
+
+
+ptCloud drawAlignedCuboid( //untested
+    const vertex& v1,
+    const vertex& v2,
+    const unordered_map<int, ptCloud>& mapping,
+    const gridData& gridData,
+    float thickness = 0.
+) {
+    auto [minV, maxV] = arrangeBoundingBox(v1, v2);
+
+    auto bucketIndices = calculateIndicesFromBB(gridData, minV, maxV);
+    ptCloud res;
+
+    for (int bucketIndex : bucketIndices) {
+        auto it = mapping.find(bucketIndex);
+        if (it == mapping.end()) return {};
+        const ptCloud& bucket = it->second;
+
+        for (const point& pt : bucket) {
+            const vertex& ptCoords = pt.first;
+
+            if (minV.x + thickness < ptCoords.x &&
+                minV.y + thickness < ptCoords.y &&
+                minV.z + thickness < ptCoords.z &&
+                maxV.x - thickness > ptCoords.x &&
+                maxV.y - thickness > ptCoords.y &&
+                maxV.z - thickness > ptCoords.z) continue;
+
+            if (minV.x < ptCoords.x &&
+                minV.y < ptCoords.y &&
+                minV.z < ptCoords.z &&
+                maxV.x > ptCoords.x &&
+                maxV.y > ptCoords.y &&
+                maxV.z > ptCoords.z) res.push_back(pt);
         }
     }
     return res;
@@ -442,7 +531,6 @@ int main() {
     ifstream file(pt_cloud_path);
     stringstream buffer;
 
-    int starttime = getTime();
     //1.25 s
     buffer << file.rdbuf();
     string fileStr = buffer.str();
@@ -469,35 +557,30 @@ int main() {
             });
     }
 
-    printf("Loaded points in: %d ms\n", getTime() - starttime);
     if (points.size() != pointCountTarget) cout << "Expected " << pointCountTarget << " Points but got " << points.size() << endl;
     cout << "loaded points" << endl;
 
-    auto [mapping, gridData] = buildGrid(points, 20);
+    int starttime = getTime();
+
+    auto [mapping, gridData] = buildGrid(points, 25);
+    printf("built grid in: %d us\n", getTime() - starttime);
 
     ptCloud test;
-    //vector<vertex> sphere = loadPointsObj("C:/Users/robik/volumetric display simulation/pythonScripts/test.obj");
-    //for (vertex ptCoords : sphere) {
-    //    vertex scaledPtCoords = transform(ptCoords, 0, 0, 20, 20);
-    //    //cout << scaledPtCoords.x << " " << scaledPtCoords.y << " " << scaledPtCoords.z << endl;
-    //    ptCloud newPts = drawPoint(scaledPtCoords, mapping, gridData, 1);
-    //    //cout << newPts.size() << " new points" << endl;
-    //    test.insert(test.end(), newPts.begin(), newPts.end());
-    //    //cout << test.size() << "new len" << endl;
-    //}
     mesh sphere = loadMeshObj("C:/Users/robik/volumetric display simulation/pythonScripts/test.obj");
     //vertices
-    // 
-    //for (const vertex& ptCoords : sphere.vertices) {
-    //    vertex scaledPtCoords = transform(ptCoords, 0, 0, 20, 20);
-    //    //cout << scaledPtCoords.x << " " << scaledPtCoords.y << " " << scaledPtCoords.z << endl;
-    //    ptCloud newPts = drawPoint(scaledPtCoords, mapping, gridData, 0.7);
-    //    //cout << newPts.size() << " new points" << endl;
-    //    test.insert(test.end(), newPts.begin(), newPts.end());
-    //    //cout << test.size() << "new len" << endl;
-    //}
+     
+    starttime = getTime();
+    
+    for (const vertex& ptCoords : sphere.vertices) {
+        vertex scaledPtCoords = transform(ptCoords, 0, 0, 20, 20);
+        ptCloud newPts = drawParticle(scaledPtCoords, mapping, gridData, 0.7);
+        test.insert(test.end(), newPts.begin(), newPts.end());
+    }
+    printf("drew sphere %d points in: %d us\n", sphere.vertices.size(), getTime() - starttime);
     //edges
-    //
+    
+    starttime = getTime();
+
     for (const auto& lineIndices : sphere.edges) {
         const vertex& a = sphere.vertices[lineIndices.first], b = sphere.vertices[lineIndices.second];
         vertex as = transform(a, 0, 0, 27.5, 27);
@@ -505,17 +588,20 @@ int main() {
         ptCloud newPts = drawLine(as, bs, mapping, gridData, 0.6);
         test.insert(test.end(), newPts.begin(), newPts.end());
     }
-    cout << "writing" << endl;
-    writePtcloudToFile(test, "C:/Users/robik/Downloads/test.ply");
+    printf("drew %d sphere edges in: %d us\n", sphere.edges.size(), getTime() - starttime);
 
-    //for (const auto& lineIndices : sphere.faces) {
-    //    const vertex& a = sphere.vertices[lineIndices[0]], b = sphere.vertices[lineIndices[1]], c = sphere.vertices[lineIndices[2]];
-    //    vertex as = transform(a, 0, 0, 21, 20);
-    //    vertex bs = transform(b, 0, 0, 21, 20);
-    //    vertex cs = transform(c, 0, 0, 21, 20);
-    //    ptCloud newPts = drawTriangle(as, bs, cs, mapping, gridData, 0.2);
-    //    test.insert(test.end(), newPts.begin(), newPts.end());
-    //}
+    starttime = getTime();
+
+    for (const auto& lineIndices : sphere.faces) {
+        const vertex& a = sphere.vertices[lineIndices[0]], b = sphere.vertices[lineIndices[1]], c = sphere.vertices[lineIndices[2]];
+        vertex as = transform(a, 0, 0, 21, 20);
+        vertex bs = transform(b, 0, 0, 21, 20);
+        vertex cs = transform(c, 0, 0, 21, 20);
+        ptCloud newPts = drawTriangle(as, bs, cs, mapping, gridData, 0.2);
+        test.insert(test.end(), newPts.begin(), newPts.end());
+    }
+    printf("drew %d sphere faces in: %d us\n", sphere.faces.size(), getTime() - starttime);
+
     cout << "writing" << endl;
     writePtcloudToFile(test, "C:/Users/robik/Downloads/test.ply");
 }
