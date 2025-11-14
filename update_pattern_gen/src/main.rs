@@ -1,6 +1,6 @@
 use image::{ImageBuffer, Rgba};
 use anyhow::Result;
-use rand::{rng, seq::{index, SliceRandom}};
+use rand::{rng, seq::SliceRandom};
 use rayon::prelude::*;
 use std::f64::consts::PI;
 use itertools::Itertools;
@@ -10,7 +10,6 @@ use std::io::Write;
 
 const SIZE: i32 = 64;
 const NCOLLS: i32 = 2000;
-const DIST_FACTOR: f64 = 20.0;
 const PITCH: f64 = 2.5;
 const PANEL_2_OFFSET: f64 = 15.0/PITCH;
 const IMAGE_SCALE: i32 = 12;
