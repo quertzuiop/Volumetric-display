@@ -97,7 +97,17 @@ fn write_to_file(path: &str, best: &Vec<(i32, Best)>) -> Result<()> {
         let index1 = best_item.index1;
         let index2 = best_item.index2;
         let pattern = best_item.pattern;
-        writeln!(file, "{} {} {} {} {} {} {}", frame, index1, index2, pattern.0 as i32, pattern.1 as i32, pattern.2 as i32, pattern.3 as i32)?;
+        let mut pt_coords: Vec<Point> = best_item.pts1.clone();
+        pt_coords.extend(&best_item.pts2);
+        let mut next_str = format!("{} {} {} {} {} {} {}", frame, index1, index2, pattern[0] as i32, pattern[1] as i32, pattern[2] as i32, pattern[3] as i32);
+        let mut i = 0;
+        for j in 0..4 {
+            if pattern[j] == true {
+                next_str.push_str(&format!(" {},{},{}", pt_coords[i].x, pt_coords[i].y, pt_coords[i].z));
+                i+=1;
+            }
+        }
+        writeln!(file, "{}", next_str)?;
     }
     Ok(())
 }
@@ -125,7 +135,7 @@ fn write_pointcloud_to_file(path: &str, points: &Vec<Point>, normals: &Vec<Point
 struct Best {
     index1: i32,
     index2: i32,
-    pattern: (bool, bool, bool, bool),
+    pattern: [bool; 4],
     pts1: Vec<Point>,
     pts2: Vec<Point>,
     normal1: Point,
@@ -157,7 +167,7 @@ fn main() {
         let best_choice = (0..(1<<10 as i32)).into_par_iter().map(|index_encoded| {
             let index1 = index_encoded >> 5;
             let index2 = index_encoded & 0b11111;
-            let mut best_choice_local: Best = Best { index1: 0, index2:0, pattern: (false, false, false, false), pts1: vec![], pts2: vec![] , normal1: Point::new(0.0, 0.0, 0.0), normal2: Point::new(0.0, 0.0, 0.0)};
+            let mut best_choice_local: Best = Best { index1: 0, index2:0, pattern: [false, false, false, false], pts1: vec![], pts2: vec![] , normal1: Point::new(0.0, 0.0, 0.0), normal2: Point::new(0.0, 0.0, 0.0)};
             let mut max_score_local: f64 = -1.0;
             for activation_pattern in product(&[true, false], 4).iter() {
                 if activation_pattern.iter().all(|&x| x == false) {
@@ -205,7 +215,7 @@ fn main() {
                     best_choice_local = Best { 
                         index1, 
                         index2, 
-                        pattern: (activation_pattern[0], activation_pattern[1], activation_pattern[2], activation_pattern[3]), 
+                        pattern: [activation_pattern[0], activation_pattern[1], activation_pattern[2], activation_pattern[3]], 
                         pts1: pts1.clone(), 
                         pts2: pts2.clone(),
                         normal1: Point::normal(true, angle),
@@ -219,7 +229,7 @@ fn main() {
         best_choices.push((frame, best_choice.clone()));
         let Best { index1: _index1, index2: _index2, pattern, pts1: new_pts1, pts2: new_pts2, normal1: new_normal1, normal2: new_normal2 } = best_choice;
 
-        n += pattern.0 as i32 + pattern.1 as i32 + pattern.2 as i32 + pattern.3 as i32;
+        n += pattern[0] as i32 + pattern[1] as i32 + pattern[2] as i32 + pattern[3] as i32;
 
         for pt in new_pts1.iter().chain(new_pts2.iter()) {
             pts.push(*pt);

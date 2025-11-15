@@ -128,3 +128,7 @@ Mesh loadMeshObj(string path) {
     }
     return res;
 }
+
+UpdatePattern loadUpdatePattern(string path) {
+
+}

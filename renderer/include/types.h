@@ -3,6 +3,7 @@
 #include<vector>
 #include<tuple>
 #include<unordered_map>
+#include<variant>
 
 struct Vec3 {
     float x;
@@ -16,10 +17,9 @@ struct Color {
     bool b;
 };
 
-struct PointDisplayParams {
-    uint8_t frameIndex;
-    uint8_t rowIndex;
-    bool isDisplay1;
+enum ClippingBehavior {
+    ADD,
+    OVERWRITE,
 };
 
 //struct Point {
@@ -40,8 +40,32 @@ struct GridParams {
 using Point = std::pair<Vec3, Vec3>;
 using ptCloud = std::vector<Point>;
 
+using ObjectId = uint32_t;
+
+struct PointDisplayParams {
+    uint16_t frameIndex;
+    uint16_t rowIndex;
+    bool isDisplay1;
+};
+
+struct RenderedPoint {
+    ObjectId objectId;
+    PointDisplayParams pointDisplayParams;
+    Vec3 pos;
+    Color color;
+};
+
+struct UpdatePatternPoint {
+    PointDisplayParams pointDisplayParams;
+    Vec3 pos;
+};
+
+using UpdatePattern = vector<UpdatePatternPoint>;
+
+
 struct Mesh {
     std::vector<Vec3> vertices;
     std::vector<std::pair<int, int>> edges;
     std::vector<std::array<int, 3>> faces;
 };
+
