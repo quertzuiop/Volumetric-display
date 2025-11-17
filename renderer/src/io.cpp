@@ -4,6 +4,9 @@
 #include <regex>
 #include <fstream>
 #include <iostream>
+#include <sstream>
+#include <assert.h>
+#include <algorithm>
 
 #include "types.h"
 using namespace std;
@@ -76,6 +79,28 @@ void writePtcloudToFile(const ptCloud& points, const string& path) {
     }
 }
 
+void writeRenderToFile(const Render& render, const string& path) {
+    ofstream PtCloudFile(path);
+    PtCloudFile << "ply\n"
+        "format ascii 1.0\n"
+        "element vertex " << render.size() << "\n"
+        "property float x\n"
+        "property float y\n"
+        "property float z\n"
+        "property float nx\n"
+        "property float ny\n"
+        "property float nz\n"
+        "property uchar red\n"
+        "property uchar green\n"
+        "property uchar blue\n"
+        "end_header\n";
+
+    for (const RenderedPoint& pt : render) {
+        string formatted = format
+        PtCloudFile << pt.first.x << " " << pt.first.y << " " << pt.first.z << " " << pt.second.x << " " << pt.second.y << " " << pt.second.z << endl;
+    }
+}
+
 vector<Vec3> loadPointsObj(string path) {
     ifstream file(path);
     string str;
@@ -93,6 +118,7 @@ vector<Vec3> loadPointsObj(string path) {
     }
     return vertices;
 }
+
 Mesh loadMeshObj(string path) {
     ifstream file(path);
     string str;
@@ -129,6 +155,48 @@ Mesh loadMeshObj(string path) {
     return res;
 }
 
-UpdatePattern loadUpdatePattern(string path) {
+bool comparePatterns(const UpdatePatternPoint& p1, const UpdatePatternPoint& p2) {
+    return p1.pointDisplayParams.frameIndex < p2.pointDisplayParams.frameIndex;
+}
 
+UpdatePattern loadUpdatePattern(string path) {
+    ifstream file(path);
+    stringstream buffer;
+
+    buffer << file.rdbuf();
+    string fileStr = buffer.str();
+
+    vector<string> splitFileStr = split(fileStr, "\n");
+    UpdatePattern res;
+
+    for (const string& line : splitFileStr) {
+        vector<string> lineInfo = split(line);
+        //516 31 31 1 1 1 1 -1.5826960226627385,31.46021413308955,0 0.025122159089884737,-0.49936847830300873,0 -4.409725716973366,-31.761680042168166,0.5 -6.0175438987259895,0.19790256922439192,0.5
+        assert(lineInfo.size() >= 9);
+
+        int frameIndex = stoi(lineInfo[0]);
+        int index1 = stoi(lineInfo[1]);
+        int index2 = stoi(lineInfo[2]);
+        array<bool, 4> pattern {lineInfo[3] == "1", lineInfo[4] == "1", lineInfo[5] == "1", lineInfo[6] == "1"};
+
+        int i = 0;
+        for (int j = 0; j < 4; ++j) {
+            bool isPixelOn = pattern[j];
+            if (isPixelOn) {
+                bool isDisplay1 = j < 2;
+                uint16_t index = isDisplay1 ? index1 : index2;
+
+                vector<string> posStr = split(lineInfo[7 + i], ",");
+                assert(posStr.size() == 3);
+                Vec3 pos = { stof(posStr[0]), stof(posStr[1]), stof(posStr[2])};
+
+                UpdatePatternPoint newPt = { {frameIndex, index, isDisplay1}, pos };
+                res.push_back(newPt);
+
+                ++i;
+            }
+        }
+    }
+    sort(res.begin(), res.end(), comparePatterns);
+    return res;
 }

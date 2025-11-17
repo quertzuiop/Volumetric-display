@@ -1,4 +1,5 @@
 .vscode/
+.vs/
 ahoj.txt
 target/
 settings.json

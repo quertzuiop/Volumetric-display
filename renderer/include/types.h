@@ -17,6 +17,11 @@ struct Color {
     bool b;
 };
 
+struct Transformation {
+    Vec3 translation = { 0, 0, 0 };
+    Vec3 rotation = { 0, 0, 0 };
+    Vec3 scale = { 1, 1, 1 };
+};
 enum ClippingBehavior {
     ADD,
     OVERWRITE,
@@ -53,14 +58,17 @@ struct RenderedPoint {
     PointDisplayParams pointDisplayParams;
     Vec3 pos;
     Color color;
+    ClippingBehavior clippingBehavior;
 };
 
 struct UpdatePatternPoint {
     PointDisplayParams pointDisplayParams;
     Vec3 pos;
+    Vec3 normal;
 };
 
-using UpdatePattern = vector<UpdatePatternPoint>;
+using Render = std::vector<RenderedPoint>;
+using UpdatePattern = std::vector<UpdatePatternPoint>;
 
 
 struct Mesh {

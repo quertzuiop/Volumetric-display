@@ -12,4 +12,4 @@ int calculateIndex(const GridParams& params, const Vec3& ptCoords);
 
 vector<int> calculateIndicesFromBB(const GridParams& params, const Vec3& min, const Vec3& max, float padding = 0.);
 
-tuple<unordered_map<int, ptCloud>, GridParams> buildGrid(const ptCloud& points, int ptsPerCell);
+tuple<unordered_map<int, UpdatePattern>, GridParams> buildGrid(const UpdatePattern& points, int ptsPerCell);

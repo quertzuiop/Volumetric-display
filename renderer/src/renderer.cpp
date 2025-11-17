@@ -23,61 +23,120 @@ Object::Object(ObjectId initId, Geometry initGeometry, Color initColor, Clipping
     id = initId;
     geometry = initGeometry;
     color = initColor;
-    clippinBehavior = initClippingBehavior;
+    clippingBehavior = initClippingBehavior;
 }
-ObjectId Object::getId() {
-    return id;
-}
+
 void Object::setGeometry(Geometry newGeometry) {
     geometry = newGeometry;
+    toRerender = true;
 }
 void Object::setColor(Color newColor) {
     color = newColor;
+    toRerender = true;
 }
 void Object::setTranslation(Vec3 newTranslation) {
-    translation = newTranslation;
+    transformation.translation = newTranslation;
+    toRerender = true;
 }
 void Object::setRotation(Vec3 newRotation) {
-    rotation = newRotation;
+    transformation.rotation = newRotation;
+    toRerender = true;
 }
 void Object::setScale(Vec3 newScale) {
-    scale = newScale;
+    transformation.scale = newScale;
+    toRerender = true;
 }
 
 Scene::Scene() {
-
-    auto [mapping, params] = buildGrid();
+    UpdatePattern updatePattern = loadUpdatePattern("C:/Users/robik/volumetric display simulation/pythonScripts/Volumetric-display/update_pattern_gen/output.txt");
+    auto [mapping_, params_] = buildGrid(updatePattern, 20);
+    mapping = mapping_;
 }
 
-ptCloud Scene::drawParticle( //can have parts cut off, points sampled from 1 cell
-    const Vec3& pos,
-    const unordered_map<int, ptCloud>& mapping, 
-    const GridParams& params, 
-    float radius, bool useMnht=false
+ObjectId Scene::createObject(Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior) {
+    Object newObj = Object(nextId(), initGeometry, initColor, initClippingBehavior);
+    objects.push_back(newObj);
+    idToIndex[lastId] = objects.size() - 1;
+}
+void Scene::render() {
+    Render render;
+    for (const Object& object : objects) {
+        if (object.needsRerendering()) {
+            draw(object, render);
+        }
+    }
+    writeRenderToFile(render, "");
+}
+
+void Scene::draw(const Object& object, Render& render) {
+    auto geometry = object.getGeometry();
+    auto color = object.getColor();
+    auto& transformation = object.getTransformation();
+    auto clippingBehavior = object.getClippingBehavior();
+    auto objectId = object.getId();
+    visit([&](auto&& arg)
+    {
+    using T = std::decay_t<decltype(arg)>;
+    if constexpr (std::is_same_v<T, ParticleGeometry>)
+        drawParticle(arg, color, transformation, clippingBehavior, objectId, render);
+
+    else if constexpr (std::is_same_v<T, CapsuleGeometry>)
+        drawCapsule(arg, color, transformation, clippingBehavior, objectId, render);
+
+    else if constexpr (std::is_same_v<T, TriangleGeometry>)
+        drawTriangle(arg, color, transformation, clippingBehavior, objectId, render);
+
+    else if constexpr (std::is_same_v<T, SphereGeometry>)
+        drawSphere(arg, color, transformation, clippingBehavior, objectId, render);
+
+    else if constexpr (std::is_same_v<T, CuboidGeometry>)
+        drawCuboid(arg, color, transformation, clippingBehavior, objectId, render);
+
+    //else if constexpr (std::is_same_v<T, MeshGeometry>)
+    //    drawMesh(arg, color, render);
+    //
+    else
+        static_assert(false, "non-exhaustive visitor!");
+    }, geometry);
+}
+
+
+void Scene::drawParticle( //can have parts cut off, points sampled from 1 cell
+    const ParticleGeometry& geometry,
+    const Color& color,
+    const Transformation& transformation,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
 ){
+    auto& pos = geometry.pos;    
+
     int index = calculateIndex(params, pos);
     auto it = mapping.find(index);
-    if (it == mapping.end()) return {};
-    const ptCloud& bucket = it->second;
+    if (it == mapping.end()) return;
+    const UpdatePattern& bucket = it->second;
 
-    float radius2 = radius * radius;
-    ptCloud res;
+    float radius2 = pow(geometry.radius, 2);
 
-    for (const Point& potentialPt : bucket) {
-        Vec3 potentialPtCoords = potentialPt.first;
+    for (const UpdatePatternPoint& pt : bucket) {
+        Vec3 potentialPtCoords = pt.pos;
         double d2 = dist2(pos, potentialPtCoords);
-        if (d2 <= radius2) res.push_back(potentialPt);
+        if (d2 <= radius2) render.push_back({objectId, pt.pointDisplayParams, pos, color, clippingBehavior});
     }
-    return res;
 }
 
-ptCloud Scene::drawLine(
-    const Vec3& start,
-    const Vec3& end, 
-    const unordered_map<int, ptCloud>& mapping,
-    const GridParams& params,
-    float radius
+void Scene::drawCapsule(
+    const CapsuleGeometry& geometry,
+    const Color& color,
+    const Transformation& transformation,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
 ) {
+    auto& start = geometry.start;
+    auto& end = geometry.end;
+    auto radius = geometry.radius;
+
     float length = dist(start, end);
     float length2 = length * length;
     float radius2 = radius * radius;
@@ -88,14 +147,12 @@ ptCloud Scene::drawLine(
     
     auto bucketIndices = calculateIndicesFromBB(params, minV, maxV, radius);
 
-    ptCloud res;
-
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) return {};
-        const ptCloud& bucket = it->second;
-        for (const Point& pt : bucket) {
-            const Vec3& ptCoords = pt.first;
+        if (it == mapping.end()) return;
+        const UpdatePattern& bucket = it->second;
+        for (const UpdatePatternPoint& pt : bucket) {
+            const Vec3& ptCoords = pt.pos;
             Vec3 v1 = start - ptCoords;
 
             // float d12 = dist(ptCoords, start);
@@ -105,21 +162,25 @@ ptCloud Scene::drawLine(
             float dSquared = magnitude_2(cross(vec, v1)) / length2;
 
             if (dSquared <= radius2) {
-                res.push_back(pt);
+                render.push_back({ objectId, pt.pointDisplayParams, ptCoords, color, clippingBehavior });
             }
         }
     }
-    return res;
 }
 
-ptCloud Scene::drawTriangle(
-    const Vec3& v1,
-    const Vec3& v2,
-    const Vec3& v3,
-    const unordered_map<int, ptCloud>& mapping,
-    const GridParams& params,
-    float radius
+void Scene::drawTriangle(
+    const TriangleGeometry& geometry,
+    const Color& color,
+    const Transformation& transformation,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
 ) {
+    auto& v1 = geometry.v1;
+    auto& v2 = geometry.v2;
+    auto& v3 = geometry.v3;
+    auto thickness = geometry.thickness;
+
     Vec3 minV = {
         min(min(v1.x, v2.x), v3.x),
         min(min(v1.y, v2.y), v3.y),
@@ -131,7 +192,7 @@ ptCloud Scene::drawTriangle(
         max(max(v1.z, v2.z), v3.z),
     };
 
-    auto bucketIndices = calculateIndicesFromBB(params, minV, maxV, radius);
+    auto bucketIndices = calculateIndicesFromBB(params, minV, maxV, thickness);
 
     Vec3 v21 = v2 - v1;
     Vec3 v32 = v3 - v2;
@@ -148,17 +209,15 @@ ptCloud Scene::drawTriangle(
     Vec3 c32 = cross(v32, normal);
     Vec3 c13 = cross(v13, normal);
 
-    ptCloud res;
-
-    float radius2 = radius * radius;
+    float thickness2 = thickness * thickness;
 
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) return {};
-        const ptCloud& bucket = it->second;
+        if (it == mapping.end()) return;
+        const UpdatePattern& bucket = it->second;
 
-        for (const Point& pt : bucket) {
-            const Vec3& ptCoords = pt.first;
+        for (const UpdatePatternPoint& pt : bucket) {
+            const Vec3& ptCoords = pt.pos;
 
             Vec3 p1 = ptCoords - v1;
             Vec3 p2 = ptCoords - v2;
@@ -175,61 +234,68 @@ ptCloud Scene::drawTriangle(
             else {
                 d2 = pow(dot(normal, p1), 2) /magNormal;
             }
-            if (d2 < radius2) res.push_back(pt);
+            if (d2 < thickness2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, color, clippingBehavior });
         }
     }
-    return res;
 }
 
-ptCloud Scene::drawSphere(
-    const Vec3& pos,
-    const unordered_map<int, ptCloud>& mapping,
-    const GridParams& params,
-    float radius, float thickness = 0.
+void Scene::drawSphere (
+    const SphereGeometry& geometry,
+    const Color& color,
+    const Transformation& transformation,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
 ) {
+    auto& pos = geometry.pos;
+    auto radius = geometry.radius;
+    auto thickness = geometry.thickness;
+
     Vec3 minV = pos - radius;
     Vec3 maxV = pos + radius;
 
     auto bucketIndices = calculateIndicesFromBB(params, minV, maxV, radius);
-    ptCloud res;
 
     float radius2 = radius * radius;
 
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) return {};
-        const ptCloud& bucket = it->second;
+        if (it == mapping.end()) return;
+        const UpdatePattern& bucket = it->second;
 
-        for (const Point& pt : bucket) {
-            const Vec3& ptCoords = pt.first;
+        for (const UpdatePatternPoint& pt : bucket) {
+            const Vec3& ptCoords = pt.pos;
             float d2 = dist2(ptCoords, pos);
             if (thickness > 0 && d2 < (2 * radius * thickness - radius2)) continue; // magic math supr
-            if (d2 < radius2) res.push_back(pt);
+            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, pos, color, clippingBehavior });;
         }
     }
-    return res;
 }
 
 
-ptCloud Scene::drawCuboid( //untested
-    const Vec3& v1,
-    const Vec3& v2,
-    const unordered_map<int, ptCloud>& mapping,
-    const GridParams& params,
-    float thickness = 0.
+void Scene::drawCuboid(
+    const CuboidGeometry& geometry,
+    const Color& color,
+    const Transformation& transformation,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
 ) {
+    auto& v1 = geometry.v1;
+    auto& v2 = geometry.v2;
+    auto thickness = geometry.thickness;
+
     auto [minV, maxV] = arrangeBoundingBox(v1, v2);
 
     auto bucketIndices = calculateIndicesFromBB(params, minV, maxV);
-    ptCloud res;
 
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) return {};
-        const ptCloud& bucket = it->second;
+        if (it == mapping.end()) return;
+        const UpdatePattern& bucket = it->second;
 
-        for (const Point& pt : bucket) {
-            const Vec3& ptCoords = pt.first;
+        for (const UpdatePatternPoint& pt : bucket) {
+            const Vec3& ptCoords = pt.pos;
 
             if (minV.x + thickness < ptCoords.x &&
                 minV.y + thickness < ptCoords.y &&
@@ -243,10 +309,9 @@ ptCloud Scene::drawCuboid( //untested
                 minV.z < ptCoords.z &&
                 maxV.x > ptCoords.x &&
                 maxV.y > ptCoords.y &&
-                maxV.z > ptCoords.z) res.push_back(pt);
+                maxV.z > ptCoords.z) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, color, clippingBehavior });;
         }
     }
-    return res;
 }
 
 

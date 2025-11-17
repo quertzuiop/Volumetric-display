@@ -41,16 +41,22 @@ struct CuboidGeometry {
     float thickness = 0.;
 };
 
-struct MeshGeometry {
-    Vec3 hinge;
-    Mesh mesh;
-};
+//struct MeshGeometry {
+//    Vec3 hinge;
+//    Mesh mesh;
+//};
 
-using Geometry = std::variant<ParticleGeometry, CapsuleGeometry, TriangleGeometry, SphereGeometry, CuboidGeometry, MeshGeometry>;
+using Geometry = std::variant<ParticleGeometry, CapsuleGeometry, TriangleGeometry, SphereGeometry, CuboidGeometry>;
 
 class Object {
     public:
-        ObjectId getId();
+        ObjectId getId() const { return id; }
+        bool needsRerendering() const { return toRerender; }
+        const Geometry& getGeometry() const { return geometry; }
+        const Color& getColor() const { return color; }
+        const Transformation& getTransformation() const { return transformation; }
+        ClippingBehavior getClippingBehavior() const { return clippingBehavior; }
+
         void setGeometry(Geometry newGeometry);
         void setColor(Color newColor);
         void setTranslation(Vec3 newTranslation);
@@ -62,18 +68,16 @@ class Object {
         ObjectId id;
         Geometry geometry;
         Color color;
-        ClippingBehavior clippinBehavior;
-
-        Vec3 translation = { 0, 0, 0 };
-        Vec3 rotation = { 0, 0, 0 };
-        Vec3 scale = { 1, 1, 1 };
+        ClippingBehavior clippingBehavior;
+        bool toRerender = true;
+        Transformation transformation;
 };
 
 class Scene {
     public: 
         GridParams params;
-        std::unordered_map<int, ptCloud> mapping;
-        ObjectId createObject(Geometry initGeometry, Color initColor);
+        std::unordered_map<int, UpdatePattern> mapping;
+        ObjectId createObject(Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior);
         void render();
         void setObjectGeometry(ObjectId id, Geometry newGeometry);
         void setObjectColor(ObjectId id, Color newColor);
@@ -81,47 +85,55 @@ class Scene {
         void setObjectRotation(ObjectId id, Vec3 newRotation);
         void setObjectScale(ObjectId id, Vec3 newScale);
 
-        ptCloud drawParticle( //can have parts cut off, points sampled from 1 cell
-            const Vec3& pos,
-            const unordered_map<int, ptCloud>& mapping,
-            const GridParams& params,
-            float radius, bool useMnht = false
-        );
-        ptCloud drawLine(
-            const Vec3& start,
-            const Vec3& end,
-            const unordered_map<int, ptCloud>& mapping,
-            const GridParams& params,
-            float radius
-        );
-        ptCloud drawTriangle(
-            const Vec3& v1,
-            const Vec3& v2,
-            const Vec3& v3,
-            const unordered_map<int, ptCloud>& mapping,
-            const GridParams& params,
-            float radius
-        );
-        ptCloud drawSphere(
-            const Vec3& pos,
-            const unordered_map<int, ptCloud>& mapping,
-            const GridParams& params,
-            float radius, float thickness = 0.
-        );
-        ptCloud drawCuboid( //untested
-            const Vec3& v1,
-            const Vec3& v2,
-            const unordered_map<int, ptCloud>& mapping,
-            const GridParams& params,
-            float thickness = 0.
-        );
-        void drawMesh();
     Scene();
     private:
         ObjectId lastId = 0;
         vector<Object> objects = {};
         unordered_map<ObjectId, uint32_t> idToIndex;
         ObjectId nextId();
+
+        void draw(const Object& object, Render& render);
+        void drawParticle(
+            const ParticleGeometry& geometry,
+            const Color& color,
+            const Transformation& transformation,
+            ClippingBehavior clippingBehavior,
+            ObjectId objectId,
+            Render& render
+        );
+        void drawCapsule(
+            const CapsuleGeometry& geometry,
+            const Color& color, 
+            const Transformation& transformation,
+            ClippingBehavior clippingBehavior,
+            ObjectId objectId, 
+            Render& render
+        );
+        void drawTriangle(
+            const TriangleGeometry& geometry, 
+            const Color& color,
+            const Transformation& transformation, 
+            ClippingBehavior clippingBehavior,
+            ObjectId objectId, 
+            Render& render
+        );
+        void drawSphere(
+            const SphereGeometry& geometry, 
+            const Color& color,
+            const Transformation& transformation,
+            ClippingBehavior clippingBehavior,
+            ObjectId objectId,
+            Render& render
+        );
+        void drawCuboid(
+            const CuboidGeometry& geometry,
+            const Color& color,
+            const Transformation& transformation, 
+            ClippingBehavior clippingBehavior,
+            ObjectId objectId, 
+            Render& render
+        );
+
 };
 // scene = Scene()
 // snakeContainer = scene.addContainer()

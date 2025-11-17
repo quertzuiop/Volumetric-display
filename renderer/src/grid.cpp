@@ -49,7 +49,7 @@ vector<int> calculateIndicesFromBB(const GridParams& params, const Vec3& min, co
     }
     return res;
 }
-tuple<unordered_map<int, ptCloud>, GridParams> buildGrid(const ptCloud& points, int ptsPerCell) {
+tuple<unordered_map<int, UpdatePattern>, GridParams> buildGrid(const UpdatePattern& points, int ptsPerCell) {
     int numPoints = points.size();
     int nCells = numPoints / ptsPerCell;
     int gridSize = ceil(pow(nCells, 1. / 3.));
@@ -58,8 +58,8 @@ tuple<unordered_map<int, ptCloud>, GridParams> buildGrid(const ptCloud& points, 
     Vec3 Min = { 0, 0, 0 };
     Vec3 Max = { 0, 0, 0 };
 
-    for (const Point& pt : points) {
-        Vec3 ptCoords = pt.first;
+    for (const UpdatePatternPoint& pt : points) {
+        Vec3 ptCoords = pt.pos;
         Min.x = min(Min.x, ptCoords.x);
         Min.y = min(Min.y, ptCoords.y);
         Min.z = min(Min.z, ptCoords.z);
@@ -82,10 +82,10 @@ tuple<unordered_map<int, ptCloud>, GridParams> buildGrid(const ptCloud& points, 
         Vec3 {cellSizeX, cellSizeY, cellSizeZ}
     };
     cout << "cells sizes: " << cellSizeX << ", " << cellSizeY << ", " << cellSizeZ << endl;
-    unordered_map<int, ptCloud> map;
+    unordered_map<int, UpdatePattern> map;
 
     for (int i = 0; i < points.size(); i++) {
-        int packed = calculateIndex(params, points[i].first);
+        int packed = calculateIndex(params, points[i].pos);
         auto& mapVal = map[packed];
         mapVal.push_back(std::move(points[i]));
         //array<int, 3> unpacked = unpackIndex(packed);
