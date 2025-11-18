@@ -1,6 +1,6 @@
 #include<array>
 #include<iostream>
-#include "types.h"
+#include "../include/types.h"
 
 using namespace std;
 inline int packIndex(int ix, int iy, int iz) {

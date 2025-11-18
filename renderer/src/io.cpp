@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <algorithm>
 
-#include "types.h"
+#include "../include/types.h"
 using namespace std;
 
 vector<float> getFloats(string str) {
@@ -80,8 +80,8 @@ void writePtcloudToFile(const ptCloud& points, const string& path) {
 }
 
 void writeRenderToFile(const Render& render, const string& path) {
-    ofstream PtCloudFile(path);
-    PtCloudFile << "ply\n"
+    ofstream RenderFile(path);
+    RenderFile << "ply\n"
         "format ascii 1.0\n"
         "element vertex " << render.size() << "\n"
         "property float x\n"
@@ -95,9 +95,15 @@ void writeRenderToFile(const Render& render, const string& path) {
         "property uchar blue\n"
         "end_header\n";
 
+    auto in = [] (bool c) { return c ? 255 : 0; };
     for (const RenderedPoint& pt : render) {
-        string formatted = format
-        PtCloudFile << pt.first.x << " " << pt.first.y << " " << pt.first.z << " " << pt.second.x << " " << pt.second.y << " " << pt.second.z << endl;
+        const Vec3& pos = pt.pos;
+        const Vec3& norm = pt.normal;
+        Color color = pt.color;
+        RenderFile << pos.x << " " << pos.y << " " << pos.z
+            << " " << norm.x << " " << norm.y << " " << norm.z 
+            << " " << in(color.r) << " " << in(color.g) << " " << in(color.b)
+            << endl;
     }
 }
 
@@ -170,6 +176,7 @@ UpdatePattern loadUpdatePattern(string path) {
     UpdatePattern res;
 
     for (const string& line : splitFileStr) {
+        if (line == "") continue;
         vector<string> lineInfo = split(line);
         //516 31 31 1 1 1 1 -1.5826960226627385,31.46021413308955,0 0.025122159089884737,-0.49936847830300873,0 -4.409725716973366,-31.761680042168166,0.5 -6.0175438987259895,0.19790256922439192,0.5
         assert(lineInfo.size() >= 9);
@@ -190,7 +197,7 @@ UpdatePattern loadUpdatePattern(string path) {
                 assert(posStr.size() == 3);
                 Vec3 pos = { stof(posStr[0]), stof(posStr[1]), stof(posStr[2])};
 
-                UpdatePatternPoint newPt = { {frameIndex, index, isDisplay1}, pos };
+                UpdatePatternPoint newPt = { {(uint16_t) frameIndex, (uint16_t) index, isDisplay1}, pos };
                 res.push_back(newPt);
 
                 ++i;

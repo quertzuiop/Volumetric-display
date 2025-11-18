@@ -13,7 +13,7 @@ vector<float> extractPointCloudData(string str, int nDataPoints = 6);
 
 void writePtcloudToFile(const ptCloud& points, const string& path);
 
-void writeRenderToFile(const ptCloud& points, const string& path);
+void writeRenderToFile(const Render& render, const string& path);
 
 vector<Vec3> loadPointsObj(string path);
 

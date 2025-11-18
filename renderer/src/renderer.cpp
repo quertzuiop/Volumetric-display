@@ -8,11 +8,11 @@
 #include <sstream>
 #include <chrono>
 
-#include "types.h"
-#include "math.h"
-#include "grid.h"
-#include "io.h"
-#include "renderer.h"
+#include "../include/types.h"
+#include "../include/math.h"
+#include "../include/grid.h"
+#include "../include/io.h"
+#include "../include/renderer.h"
 using namespace std;
 
 int getTime() {
@@ -48,15 +48,19 @@ void Object::setScale(Vec3 newScale) {
 }
 
 Scene::Scene() {
-    UpdatePattern updatePattern = loadUpdatePattern("C:/Users/robik/volumetric display simulation/pythonScripts/Volumetric-display/update_pattern_gen/output.txt");
+    UpdatePattern updatePattern = loadUpdatePattern("../../update_pattern_gen/output.txt");
     auto [mapping_, params_] = buildGrid(updatePattern, 20);
     mapping = mapping_;
 }
-
-ObjectId Scene::createObject(Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior) {
+ObjectId Scene::nextId() {
+    return ++lastId;
+}
+ObjectId Scene::createObject(const Geometry& initGeometry, const Color& initColor, ClippingBehavior initClippingBehavior) {
     Object newObj = Object(nextId(), initGeometry, initColor, initClippingBehavior);
     objects.push_back(newObj);
+    cout<<"created object "<< objects[objects.size()].getId();
     idToIndex[lastId] = objects.size() - 1;
+    return lastId;
 }
 void Scene::render() {
     Render render;
@@ -65,7 +69,7 @@ void Scene::render() {
             draw(object, render);
         }
     }
-    writeRenderToFile(render, "");
+    writeRenderToFile(render, "output/render.ply");
 }
 
 void Scene::draw(const Object& object, Render& render) {
@@ -121,7 +125,7 @@ void Scene::drawParticle( //can have parts cut off, points sampled from 1 cell
     for (const UpdatePatternPoint& pt : bucket) {
         Vec3 potentialPtCoords = pt.pos;
         double d2 = dist2(pos, potentialPtCoords);
-        if (d2 <= radius2) render.push_back({objectId, pt.pointDisplayParams, pos, color, clippingBehavior});
+        if (d2 <= radius2) render.push_back({objectId, pt.pointDisplayParams, pos, pt.normal, color, clippingBehavior});
     }
 }
 
@@ -162,7 +166,7 @@ void Scene::drawCapsule(
             float dSquared = magnitude_2(cross(vec, v1)) / length2;
 
             if (dSquared <= radius2) {
-                render.push_back({ objectId, pt.pointDisplayParams, ptCoords, color, clippingBehavior });
+                render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, color, clippingBehavior });
             }
         }
     }
@@ -234,7 +238,7 @@ void Scene::drawTriangle(
             else {
                 d2 = pow(dot(normal, p1), 2) /magNormal;
             }
-            if (d2 < thickness2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, color, clippingBehavior });
+            if (d2 < thickness2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, color, clippingBehavior });
         }
     }
 }
@@ -267,7 +271,7 @@ void Scene::drawSphere (
             const Vec3& ptCoords = pt.pos;
             float d2 = dist2(ptCoords, pos);
             if (thickness > 0 && d2 < (2 * radius * thickness - radius2)) continue; // magic math supr
-            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, pos, color, clippingBehavior });;
+            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, pos, pt.normal, color, clippingBehavior });;
         }
     }
 }
@@ -309,87 +313,87 @@ void Scene::drawCuboid(
                 minV.z < ptCoords.z &&
                 maxV.x > ptCoords.x &&
                 maxV.y > ptCoords.y &&
-                maxV.z > ptCoords.z) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, color, clippingBehavior });;
+                maxV.z > ptCoords.z) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, color, clippingBehavior });;
         }
     }
 }
 
 
-int main() {
-    string pt_cloud_path = "C:/Users/robik/volumetric display simulation/pythonScripts/Volumetric-display/update_pattern_gen/pointcloud.ply";
-    ifstream file(pt_cloud_path);
-    stringstream buffer;
+// int main() {
+//     string pt_cloud_path = "C:/Users/robik/volumetric display simulation/pythonScripts/Volumetric-display/update_pattern_gen/pointcloud.ply";
+//     ifstream file(pt_cloud_path);
+//     stringstream buffer;
 
-    buffer << file.rdbuf();
-    string fileStr = buffer.str();
+//     buffer << file.rdbuf();
+//     string fileStr = buffer.str();
 
-    ptCloud points;
-    int pointCountTarget = 0;
-    int i = 0;
+//     ptCloud points;
+//     int pointCountTarget = 0;
+//     int i = 0;
 
 
-    vector<string> splitFileStr = split(fileStr, "\n");
+//     vector<string> splitFileStr = split(fileStr, "\n");
 
-    for (const string& line : splitFileStr) {
-        if (i%50000 == 0) cout << i << endl;
-        i++;
-        if (line.find("element vertex") != string::npos) {
-            pointCountTarget = stoi(line.substr(15, string::npos));
-            cout << pointCountTarget << endl;
-        }
-        auto floats = extractPointCloudData(line);
-        if (floats.size() < 6) continue;
-        points.push_back({ 
-            Vec3{ floats[0], floats[1], floats[2] }, 
-            Vec3{ floats[3], floats[4], floats[5] } 
-            });
-    }
+//     for (const string& line : splitFileStr) {
+//         if (i%50000 == 0) cout << i << endl;
+//         i++;
+//         if (line.find("element vertex") != string::npos) {
+//             pointCountTarget = stoi(line.substr(15, string::npos));
+//             cout << pointCountTarget << endl;
+//         }
+//         auto floats = extractPointCloudData(line);
+//         if (floats.size() < 6) continue;
+//         points.push_back({ 
+//             Vec3{ floats[0], floats[1], floats[2] }, 
+//             Vec3{ floats[3], floats[4], floats[5] } 
+//             });
+//     }
 
-    if (points.size() != pointCountTarget) cout << "Expected " << pointCountTarget << " Points but got " << points.size() << endl;
-    cout << "loaded points" << endl;
+//     if (points.size() != pointCountTarget) cout << "Expected " << pointCountTarget << " Points but got " << points.size() << endl;
+//     cout << "loaded points" << endl;
 
-    int starttime = getTime();
+//     int starttime = getTime();
 
-    auto [mapping, params] = buildGrid(points, 25);
-    printf("built grid in: %d us\n", getTime() - starttime);
+//     auto [mapping, params] = buildGrid(points, 25);
+//     printf("built grid in: %d us\n", getTime() - starttime);
 
-    ptCloud test;
-    Mesh sphere = loadMeshObj("C:/Users/robik/volumetric display simulation/pythonScripts/test.obj");
-    //vertices
+//     ptCloud test;
+//     Mesh sphere = loadMeshObj("C:/Users/robik/volumetric display simulation/pythonScripts/test.obj");
+//     //vertices
      
-    starttime = getTime();
+//     starttime = getTime();
     
-    for (const Vec3& ptCoords : sphere.vertices) {
-        Vec3 scaledPtCoords = transform(ptCoords, 0, 0, 20, 20);
-        ptCloud newPts = drawParticle(scaledPtCoords, mapping, params, 0.7);
-        test.insert(test.end(), newPts.begin(), newPts.end());
-    }
-    printf("drew sphere %d points in: %d us\n", sphere.vertices.size(), getTime() - starttime);
-    //edges
+//     for (const Vec3& ptCoords : sphere.vertices) {
+//         Vec3 scaledPtCoords = transform(ptCoords, 0, 0, 20, 20);
+//         ptCloud newPts = drawParticle(scaledPtCoords, mapping, params, 0.7);
+//         test.insert(test.end(), newPts.begin(), newPts.end());
+//     }
+//     printf("drew sphere %d points in: %d us\n", sphere.vertices.size(), getTime() - starttime);
+//     //edges
     
-    starttime = getTime();
+//     starttime = getTime();
 
-    for (const auto& lineIndices : sphere.edges) {
-        const Vec3& a = sphere.vertices[lineIndices.first], b = sphere.vertices[lineIndices.second];
-        Vec3 as = transform(a, 0, 0, 27.5, 27);
-        Vec3 bs = transform(b, 0, 0, 27.5, 27);
-        ptCloud newPts = drawLine(as, bs, mapping, params, 0.6);
-        test.insert(test.end(), newPts.begin(), newPts.end());
-    }
-    printf("drew %d sphere edges in: %d us\n", sphere.edges.size(), getTime() - starttime);
+//     for (const auto& lineIndices : sphere.edges) {
+//         const Vec3& a = sphere.vertices[lineIndices.first], b = sphere.vertices[lineIndices.second];
+//         Vec3 as = transform(a, 0, 0, 27.5, 27);
+//         Vec3 bs = transform(b, 0, 0, 27.5, 27);
+//         ptCloud newPts = drawLine(as, bs, mapping, params, 0.6);
+//         test.insert(test.end(), newPts.begin(), newPts.end());
+//     }
+//     printf("drew %d sphere edges in: %d us\n", sphere.edges.size(), getTime() - starttime);
 
-    starttime = getTime();
+//     starttime = getTime();
 
-    for (const auto& lineIndices : sphere.faces) {
-        const Vec3& a = sphere.vertices[lineIndices[0]], b = sphere.vertices[lineIndices[1]], c = sphere.vertices[lineIndices[2]];
-        Vec3 as = transform(a, 0, 0, 21, 20);
-        Vec3 bs = transform(b, 0, 0, 21, 20);
-        Vec3 cs = transform(c, 0, 0, 21, 20);
-        ptCloud newPts = drawTriangle(as, bs, cs, mapping, params, 0.2);
-        test.insert(test.end(), newPts.begin(), newPts.end());
-    }
-    printf("drew %d sphere faces in: %d us\n", sphere.faces.size(), getTime() - starttime);
+//     for (const auto& lineIndices : sphere.faces) {
+//         const Vec3& a = sphere.vertices[lineIndices[0]], b = sphere.vertices[lineIndices[1]], c = sphere.vertices[lineIndices[2]];
+//         Vec3 as = transform(a, 0, 0, 21, 20);
+//         Vec3 bs = transform(b, 0, 0, 21, 20);
+//         Vec3 cs = transform(c, 0, 0, 21, 20);
+//         ptCloud newPts = drawTriangle(as, bs, cs, mapping, params, 0.2);
+//         test.insert(test.end(), newPts.begin(), newPts.end());
+//     }
+//     printf("drew %d sphere faces in: %d us\n", sphere.faces.size(), getTime() - starttime);
 
-    cout << "writing" << endl;
-    writePtcloudToFile(test, "C:/Users/robik/Downloads/test.ply");
-}
+//     cout << "writing" << endl;
+//     writePtcloudToFile(test, "C:/Users/robik/Downloads/test.ply");
+// }

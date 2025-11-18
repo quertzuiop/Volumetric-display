@@ -57,6 +57,7 @@ struct RenderedPoint {
     ObjectId objectId;
     PointDisplayParams pointDisplayParams;
     Vec3 pos;
+    Vec3 normal;
     Color color;
     ClippingBehavior clippingBehavior;
 };

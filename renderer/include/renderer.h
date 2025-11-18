@@ -2,43 +2,44 @@
 #include<vector>
 #include<tuple>
 #include<unordered_map>
+#include <variant>
 #include"types.h"
 
 using namespace std;
 
 struct ParticleGeometry {
-    Vec3 hinge;
     Vec3 pos;
     float radius;
+    Vec3 hinge = {0, 0, 0};
 };
 
 struct CapsuleGeometry {
-    Vec3 hinge;
     Vec3 start;
     Vec3 end;
     float radius;
+    Vec3 hinge = {0, 0, 0};
 };
 
 struct TriangleGeometry {
-    Vec3 hinge;
     Vec3 v1;
     Vec3 v2;
     Vec3 v3;
     float thickness;
+    Vec3 hinge = {0, 0, 0};
 };
 
 struct SphereGeometry {
-    Vec3 hinge;
     Vec3 pos;
     float radius;
     float thickness = 0.;
+    Vec3 hinge = {0, 0, 0};
 };
 
 struct CuboidGeometry {
-    Vec3 hinge;
     Vec3 v1;
     Vec3 v2;
     float thickness = 0.;
+    Vec3 hinge = {0, 0, 0};
 };
 
 //struct MeshGeometry {
@@ -46,7 +47,7 @@ struct CuboidGeometry {
 //    Mesh mesh;
 //};
 
-using Geometry = std::variant<ParticleGeometry, CapsuleGeometry, TriangleGeometry, SphereGeometry, CuboidGeometry>;
+using Geometry = variant<ParticleGeometry, CapsuleGeometry, TriangleGeometry, SphereGeometry, CuboidGeometry>;
 
 class Object {
     public:
@@ -63,7 +64,7 @@ class Object {
         void setRotation(Vec3 newRotation);
         void setScale(Vec3 newScale);
 
-        Object(ObjectId initId, Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior = ADD);
+        Object(ObjectId initId, Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior);
     private:
         ObjectId id;
         Geometry geometry;
@@ -77,7 +78,7 @@ class Scene {
     public: 
         GridParams params;
         std::unordered_map<int, UpdatePattern> mapping;
-        ObjectId createObject(Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior);
+        ObjectId createObject(const Geometry& initGeometry, const Color& initColor, ClippingBehavior initClippingBehavior=ADD);
         void render();
         void setObjectGeometry(ObjectId id, Geometry newGeometry);
         void setObjectColor(ObjectId id, Color newColor);
