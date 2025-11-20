@@ -1,7 +1,7 @@
 use image::{ImageBuffer, Rgba};
 use anyhow::Result;
 use rand::{rng, seq::SliceRandom};
-use rayon::prelude::*;
+use rayon::{prelude::*, vec};
 use std::f64::consts::PI;
 use itertools::Itertools;
 use imageproc::drawing::draw_filled_circle_mut;
@@ -99,15 +99,18 @@ fn write_to_file(path: &str, best: &Vec<(i32, Best)>) -> Result<()> {
         let pattern = best_item.pattern;
         let mut pt_coords: Vec<Point> = best_item.pts1.clone();
         pt_coords.extend(&best_item.pts2);
-        let mut next_str = format!("{} {} {} {} {} {} {}", frame, index1, index2, pattern[0] as i32, pattern[1] as i32, pattern[2] as i32, pattern[3] as i32);
-        let mut i = 0;
-        for j in 0..4 {
-            if pattern[j] == true {
-                next_str.push_str(&format!(" {},{},{}", pt_coords[i].x, pt_coords[i].y, pt_coords[i].z));
-                i+=1;
+        let next_str = format!("{} {} {} {} {} {} {}", frame, index1, index2, pattern[0] as i32, pattern[1] as i32, pattern[2] as i32, pattern[3] as i32);
+        for slice_z in 0..64 {
+            let mut i = 0;
+            let mut ahoj = next_str.clone();
+            for j in 0..4 {
+                if pattern[j] == true {
+                    ahoj.push_str(&format!(" {},{},{}", pt_coords[i].x, pt_coords[i].y, pt_coords[i].z + slice_z as f64));
+                    i+=1;
+                }
             }
+            writeln!(file, "{}", ahoj)?;
         }
-        writeln!(file, "{}", next_str)?;
     }
     Ok(())
 }

@@ -100,6 +100,7 @@ void writeRenderToFile(const Render& render, const string& path) {
         const Vec3& pos = pt.pos;
         const Vec3& norm = pt.normal;
         Color color = pt.color;
+        printf("R: %d G: %d B: %d\n", in(color.r), in(color.g), in(color.b));
         RenderFile << pos.x << " " << pos.y << " " << pos.z
             << " " << norm.x << " " << norm.y << " " << norm.z 
             << " " << in(color.r) << " " << in(color.g) << " " << in(color.b)

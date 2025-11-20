@@ -50,6 +50,7 @@ using ObjectId = uint32_t;
 struct PointDisplayParams {
     uint16_t frameIndex;
     uint16_t rowIndex;
+    uint16_t colIndex;
     bool isDisplay1;
 };
 

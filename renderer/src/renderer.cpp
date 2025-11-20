@@ -51,22 +51,26 @@ Scene::Scene() {
     UpdatePattern updatePattern = loadUpdatePattern("../../update_pattern_gen/output.txt");
     auto [mapping_, params_] = buildGrid(updatePattern, 20);
     mapping = mapping_;
+    params = params_;
+    lastId = 0;
 }
 ObjectId Scene::nextId() {
-    return ++lastId;
+    return lastId++;
 }
 ObjectId Scene::createObject(const Geometry& initGeometry, const Color& initColor, ClippingBehavior initClippingBehavior) {
     Object newObj = Object(nextId(), initGeometry, initColor, initClippingBehavior);
     objects.push_back(newObj);
-    cout<<"created object "<< objects[objects.size()].getId();
+    cout<<"created object "<< objects[objects.size()].getId()<<endl;
     idToIndex[lastId] = objects.size() - 1;
     return lastId;
 }
 void Scene::render() {
     Render render;
-    for (const Object& object : objects) {
-        if (object.needsRerendering()) {
+    for (Object& object : objects) {
+        if (object.toRerender) {
             draw(object, render);
+            object.toRerender = false;
+            cout<<render.size()<<endl;
         }
     }
     writeRenderToFile(render, "output/render.ply");
@@ -257,10 +261,14 @@ void Scene::drawSphere (
 
     Vec3 minV = pos - radius;
     Vec3 maxV = pos + radius;
+    printf("pos coords: %f, %f, %f\n", minV.x, minV.y, minV.z);
+    printf("params: %f %f %f\n", params.boundingBoxMax.x, params.cellSizes.x, params.gridSize);
 
     auto bucketIndices = calculateIndicesFromBB(params, minV, maxV, radius);
 
     float radius2 = radius * radius;
+
+    printf("got %d bucket indices", bucketIndices.size());
 
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
@@ -270,8 +278,9 @@ void Scene::drawSphere (
         for (const UpdatePatternPoint& pt : bucket) {
             const Vec3& ptCoords = pt.pos;
             float d2 = dist2(ptCoords, pos);
+            //printf("d2: %f, r2: %f\n");
             if (thickness > 0 && d2 < (2 * radius * thickness - radius2)) continue; // magic math supr
-            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, pos, pt.normal, color, clippingBehavior });;
+            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, color, clippingBehavior });;
         }
     }
 }
@@ -285,14 +294,15 @@ void Scene::drawCuboid(
     ObjectId objectId,
     Render& render
 ) {
+    cout<<"drawing cuboid"<<endl;
     auto& v1 = geometry.v1;
     auto& v2 = geometry.v2;
     auto thickness = geometry.thickness;
-
+    
     auto [minV, maxV] = arrangeBoundingBox(v1, v2);
+    printf("params: %f %f %f\n", params.boundingBoxMax.x, params.cellSizes.x, params.gridSize);
 
     auto bucketIndices = calculateIndicesFromBB(params, minV, maxV);
-
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
         if (it == mapping.end()) return;
@@ -300,22 +310,26 @@ void Scene::drawCuboid(
 
         for (const UpdatePatternPoint& pt : bucket) {
             const Vec3& ptCoords = pt.pos;
-
-            if (minV.x + thickness < ptCoords.x &&
+            if (thickness > 0 &&
+                minV.x + thickness < ptCoords.x &&
                 minV.y + thickness < ptCoords.y &&
                 minV.z + thickness < ptCoords.z &&
                 maxV.x - thickness > ptCoords.x &&
                 maxV.y - thickness > ptCoords.y &&
-                maxV.z - thickness > ptCoords.z) continue;
+                maxV.z - thickness > ptCoords.z)continue;
 
             if (minV.x < ptCoords.x &&
                 minV.y < ptCoords.y &&
                 minV.z < ptCoords.z &&
                 maxV.x > ptCoords.x &&
                 maxV.y > ptCoords.y &&
-                maxV.z > ptCoords.z) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, color, clippingBehavior });;
+                maxV.z > ptCoords.z){
+                    render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, color, clippingBehavior });;
+                }
+                    
         }
     }
+    cout<<render.size()<<endl;
 }
 
 

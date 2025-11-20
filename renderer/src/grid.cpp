@@ -37,7 +37,8 @@ vector<int> calculateIndicesFromBB(const GridParams& params, const Vec3& min, co
     int maxIx = floor((max.x - boxMin.x + padding) / cellSizes.x);
     int maxIy = floor((max.y - boxMin.y + padding) / cellSizes.y);
     int maxIz = floor((max.z - boxMin.z + padding) / cellSizes.z);
-    //printf("min values: %d %d %d\nmax values: %d %d %d\n", minIx, minIy, minIz, maxIx, maxIy, maxIz);
+    printf("box min and max: %f %f %f, %f %f %f\n", boxMin.x, boxMin.y, boxMin.z, boxMax.x, boxMax.y, boxMax.z);
+    printf("min values: %d %d %d\nmax values: %d %d %d\n", minIx, minIy, minIz, maxIx, maxIy, maxIz);
     vector<int> res;
     res.reserve((maxIx - minIx + 1) * (maxIy - minIy + 1) * (maxIz - minIz + 1));
     for (int ix = minIx; ix <= maxIx; ix++) {
@@ -70,6 +71,8 @@ tuple<unordered_map<int, UpdatePattern>, GridParams> buildGrid(const UpdatePatte
     }
 
     cout << "grid size: " << gridSize << endl;
+    printf("Min: %f %f %f", Min.x, Min.y, Min.z);
+    printf("Max: %f %f %f", Max.x, Max.y, Max.z);
 
     float cellSizeZ = (Max.z - Min.z) / gridSize;
     float cellSizeX = (Max.x - Min.x) / gridSize;

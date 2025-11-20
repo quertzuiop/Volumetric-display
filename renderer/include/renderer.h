@@ -51,8 +51,8 @@ using Geometry = variant<ParticleGeometry, CapsuleGeometry, TriangleGeometry, Sp
 
 class Object {
     public:
+        bool toRerender = true;
         ObjectId getId() const { return id; }
-        bool needsRerendering() const { return toRerender; }
         const Geometry& getGeometry() const { return geometry; }
         const Color& getColor() const { return color; }
         const Transformation& getTransformation() const { return transformation; }
@@ -70,7 +70,6 @@ class Object {
         Geometry geometry;
         Color color;
         ClippingBehavior clippingBehavior;
-        bool toRerender = true;
         Transformation transformation;
 };
 
