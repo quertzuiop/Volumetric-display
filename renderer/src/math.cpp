@@ -12,3 +12,16 @@ std::tuple<Vec3, Vec3> arrangeBoundingBox(const Vec3& p1, const Vec3& p2) {
         std::max(p1.z, p2.z),
     } };
 }
+
+Mat4 matMul(const Mat4& mat1, const Mat4& mat2) {
+    Mat4 res;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            res[i][j] = 0;
+            for (int k = 0; k < 4; k++) {
+                res[i][j] += mat1[i][k] * mat2[k][j];
+            }
+        }
+    }
+    return res;
+}

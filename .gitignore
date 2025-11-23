@@ -6,3 +6,4 @@ settings.json
 build/
 CppProperties.json
 *.pdb
+output*

@@ -7,7 +7,7 @@
 #include <sstream>
 #include <assert.h>
 #include <algorithm>
-
+#include <filesystem>
 #include "../include/types.h"
 using namespace std;
 
@@ -100,7 +100,6 @@ void writeRenderToFile(const Render& render, const string& path) {
         const Vec3& pos = pt.pos;
         const Vec3& norm = pt.normal;
         Color color = pt.color;
-        printf("R: %d G: %d B: %d\n", in(color.r), in(color.g), in(color.b));
         RenderFile << pos.x << " " << pos.y << " " << pos.z
             << " " << norm.x << " " << norm.y << " " << norm.z 
             << " " << in(color.r) << " " << in(color.g) << " " << in(color.b)
@@ -134,8 +133,9 @@ Mesh loadMeshObj(string path) {
     vector<Vec3>& vertices = res.vertices;
     vector<pair<int, int>>& edges = res.edges;
     vector<array<int, 3>>& faces = res.faces;
-
+    
     while (getline(file, str)) {
+        printf("%s\n", str);
         if (str.find("v ") != string::npos) {
             vector<float> coords = getFloats(str);
             vertices.push_back({ coords[0], coords[1], coords[2] });

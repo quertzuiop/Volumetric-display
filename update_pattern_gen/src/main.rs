@@ -1,7 +1,7 @@
 use image::{ImageBuffer, Rgba};
 use anyhow::Result;
 use rand::{rng, seq::SliceRandom};
-use rayon::{prelude::*, vec};
+use rayon::prelude::*;
 use std::f64::consts::PI;
 use itertools::Itertools;
 use imageproc::drawing::draw_filled_circle_mut;

@@ -1,9 +1,9 @@
 #pragma once
-#pragma once
 #include<vector>
 #include<tuple>
 #include<unordered_map>
 #include<variant>
+#include<array>
 
 struct Vec3 {
     float x;
@@ -11,17 +11,22 @@ struct Vec3 {
     float z;
 };
 
+using Mat4 = std::array<std::array<float, 4>, 4>;
+
 struct Color {
     bool r;
     bool g;
     bool b;
 };
+const Color RED = {true, false, false}; 
+const Color GREEN = {false, true, false};
+const Color BLUE = {false, false, true};
+const Color WHITE = {true, true, true};
+const Color BLACK = {false, false, false};
+const Color CYAN = {false, true, true};
+const Color MAGENTA = {true, false, true};
+const Color YELLOW = {true, true, false};
 
-struct Transformation {
-    Vec3 translation = { 0, 0, 0 };
-    Vec3 rotation = { 0, 0, 0 };
-    Vec3 scale = { 1, 1, 1 };
-};
 enum ClippingBehavior {
     ADD,
     OVERWRITE,

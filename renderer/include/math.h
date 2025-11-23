@@ -48,13 +48,23 @@ template <typename T> inline int sgn(T val) {
 inline float magnitude_2(const Vec3& v) {
     return v.x * v.x + v.y * v.y + v.z * v.z;
 }
-
-inline Vec3 transform(const Vec3& pt, float dx = 0, float dy = 0, float dz = 0, float scale = 1.) {
-    return { pt.x * scale + dx, pt.y * scale + dy, pt.z * scale + dz };
+inline Vec3 matColMul(const Mat4& matrix, Vec3 vec) {
+    return {
+        matrix[0][0] * vec.x + matrix[0][1] * vec.y + matrix[0][2] * vec.z,
+        matrix[1][0] * vec.x + matrix[1][1] * vec.y + matrix[1][2] * vec.z,
+        matrix[2][0] * vec.x + matrix[2][1] * vec.y + matrix[2][2] * vec.z,
+    };
 }
+Mat4 matMul(const Mat4& mat1, const Mat4& mat2);
 
-inline Point transform(const Point& pt, float dx = 0, float dy = 0, float dz = 0, float scale = 1.) {
-    return { transform(pt.first, dx, dy, dz, scale), pt.second };
+inline void scale(Vec3& pt, float factor, const Vec3& hinge) {
+    float relativeX = pt.x - hinge.x;
+    float relativeY = pt.y - hinge.y;
+    float relativeZ = pt.z - hinge.z;
+
+    pt.x = (relativeX * factor) + hinge.x;
+    pt.y = (relativeY * factor) + hinge.y;
+    pt.z = (relativeZ * factor) + hinge.z;
 }
 
 std::tuple<Vec3, Vec3> arrangeBoundingBox(const Vec3& p1, const Vec3& p2);

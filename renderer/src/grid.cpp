@@ -37,8 +37,8 @@ vector<int> calculateIndicesFromBB(const GridParams& params, const Vec3& min, co
     int maxIx = floor((max.x - boxMin.x + padding) / cellSizes.x);
     int maxIy = floor((max.y - boxMin.y + padding) / cellSizes.y);
     int maxIz = floor((max.z - boxMin.z + padding) / cellSizes.z);
-    printf("box min and max: %f %f %f, %f %f %f\n", boxMin.x, boxMin.y, boxMin.z, boxMax.x, boxMax.y, boxMax.z);
-    printf("min values: %d %d %d\nmax values: %d %d %d\n", minIx, minIy, minIz, maxIx, maxIy, maxIz);
+    printf("---indices: bounding box min and max: %f %f %f, %f %f %f\n", min.x, min.y, min.z, max.x, max.y, max.z);
+    printf("---min values: %d %d %d\n--max values: %d %d %d\n", minIx, minIy, minIz, maxIx, maxIy, maxIz);
     vector<int> res;
     res.reserve((maxIx - minIx + 1) * (maxIy - minIy + 1) * (maxIz - minIz + 1));
     for (int ix = minIx; ix <= maxIx; ix++) {
