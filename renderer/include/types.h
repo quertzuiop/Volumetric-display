@@ -12,7 +12,6 @@ struct Vec3 {
 };
 
 using Mat4 = std::array<std::array<float, 4>, 4>;
-
 struct Color {
     bool r;
     bool g;

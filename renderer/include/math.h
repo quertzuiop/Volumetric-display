@@ -50,9 +50,9 @@ inline float magnitude_2(const Vec3& v) {
 }
 inline Vec3 matColMul(const Mat4& matrix, Vec3 vec) {
     return {
-        matrix[0][0] * vec.x + matrix[0][1] * vec.y + matrix[0][2] * vec.z,
-        matrix[1][0] * vec.x + matrix[1][1] * vec.y + matrix[1][2] * vec.z,
-        matrix[2][0] * vec.x + matrix[2][1] * vec.y + matrix[2][2] * vec.z,
+        matrix[0][0] * vec.x + matrix[0][1] * vec.y + matrix[0][2] * vec.z + matrix[0][3],
+        matrix[1][0] * vec.x + matrix[1][1] * vec.y + matrix[1][2] * vec.z + matrix[1][3],
+        matrix[2][0] * vec.x + matrix[2][1] * vec.y + matrix[2][2] * vec.z + matrix[2][3],
     };
 }
 Mat4 matMul(const Mat4& mat1, const Mat4& mat2);

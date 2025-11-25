@@ -5,13 +5,14 @@
 
 int main() {
     Scene scene = Scene();
-    SphereGeometry geom = {.pos = {0, 0, 20}, .radius = 15};
+    Mesh mesh = loadMeshObj("assets/enjoybigfixed.obj");
 
-    //Mesh mesh = loadMeshObj("assets/test.obj");
-    //printf("n vert. of mesh: %d\n", mesh.vertices.size());
-    //MeshGeometry geom = {mesh, true};
-    scene.createObject(geom, MAGENTA);
-    scene.createObject(geom, YELLOW);
+    SphereGeometry origin = {.pos = {0, 0, 1}, .radius = 1};
+    scene.createObject(origin, WHITE);
+    MeshGeometry geom = {.mesh = mesh, .isWireframe=true, .thickness=0.5};
 
+    auto meshObj = scene.createObject(geom, RED);
+    //scene.setObjectRotation(meshObj, {3.1415/2, 0, 0}, {0, 0, 0});
+    scene.setObjectScale(meshObj, {20, 20, 20}, {0, 0, 0});
     scene.render();
 }

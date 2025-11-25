@@ -7,3 +7,4 @@ build/
 CppProperties.json
 *.pdb
 output*
+apps/demo/assets/

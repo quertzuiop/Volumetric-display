@@ -13,7 +13,7 @@ struct Transformation {
     Vec3 rotation = {0, 0, 0};
     Vec3 scale = {1, 1, 1};
     Vec3 pivot = { 0, 0, 0 };
-    Mat4 getMatrix();
+    Mat4 getMatrix() const;
 };
 
 struct ParticleGeometry {
@@ -70,9 +70,9 @@ class Object {
         void setGeometry(Geometry newGeometry);
         void setColor(Color newColor);
         void translate(Vec3 translation);
-        void rotate(Vec3 newRotation, Vec3 hinge);
-
-        void scale(Vec3 newScale, Vec3 hinge);
+        void rotate(Vec3 newRotation);
+        void scale(Vec3 newScale);
+        void setPivot(Vec3 newPivot);
 
         Object(ObjectId initId, Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior);
     private:
@@ -89,12 +89,14 @@ class Scene {
         GridParams params;
         std::unordered_map<int, UpdatePattern> mapping;
         ObjectId createObject(const Geometry& initGeometry, const Color& initColor, ClippingBehavior initClippingBehavior=ADD);
+        Object& getObject(ObjectId);
         void render();
         void setObjectGeometry(ObjectId id, Geometry newGeometry);
         void setObjectColor(ObjectId id, Color newColor);
         void setObjectTranslation(ObjectId id, Vec3 newTranslation);
         void setObjectRotation(ObjectId id, Vec3 newRotation);
         void setObjectScale(ObjectId id, Vec3 newScale);
+        void setObjectIntrinsicPivot(ObjectId id, Vec3 newPivot)
 
     Scene();
     private:
@@ -141,6 +143,7 @@ class Scene {
         );
         void drawMesh(
             const MeshGeometry& geometry,
+            const Transformation& transformation,
             const Color& color,
             ClippingBehavior clippingBehavior,
             ObjectId objectId, 

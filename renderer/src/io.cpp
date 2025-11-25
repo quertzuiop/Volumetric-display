@@ -135,7 +135,6 @@ Mesh loadMeshObj(string path) {
     vector<array<int, 3>>& faces = res.faces;
     
     while (getline(file, str)) {
-        printf("%s\n", str);
         if (str.find("v ") != string::npos) {
             vector<float> coords = getFloats(str);
             vertices.push_back({ coords[0], coords[1], coords[2] });

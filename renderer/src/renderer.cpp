@@ -19,7 +19,8 @@ int getTime() {
     return chrono::duration_cast<chrono::microseconds> (chrono::system_clock::now().time_since_epoch()).count();
 }
 
-Mat4 Transformation::getMatrix() {
+Mat4 Transformation::getMatrix() const {
+    printf("getting matrix\n");
     float x = rotation.x;
     float y = rotation.y;
     float z = rotation.z;
@@ -54,7 +55,7 @@ Mat4 Transformation::getMatrix() {
     matrix[0][3] = translation.x;
     matrix[1][3] = translation.y;
     matrix[2][3] = translation.z;
-
+    printf("new translation x in getMatrix(): %f\n", translation.x);
     return matrix;
 }
 
@@ -67,45 +68,52 @@ Object::Object(ObjectId initId, Geometry initGeometry, Color initColor, Clipping
 
 Geometry Object::getTransformedGeometry() {
     Mat4 tMatrix = transformation.getMatrix();
+    const Vec3& pivot = transformation.pivot;
     float maxScale = max(max(transformation.scale.x, transformation.scale.y), transformation.scale.z);
     Geometry res;
     visit([&](auto&& arg)
     {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, ParticleGeometry>)
-            res = ParticleGeometry{
-                .pos = matColMul(tMatrix, arg.pos),
-                .radius = arg.radius * maxScale
-            };
+        res = ParticleGeometry{
+            .pos = pivot + matColMul(tMatrix, arg.pos - pivot),
+            .radius = arg.radius * maxScale
+        };
         else if constexpr (std::is_same_v<T, CapsuleGeometry>)
-            res = CapsuleGeometry{
-                .start = matColMul(tMatrix, arg.start),
-                .end = matColMul(tMatrix, arg.end),
-                .radius = arg.radius * maxScale
-            };
+        res = CapsuleGeometry{
+            .start = pivot + matColMul(tMatrix, arg.start - pivot),
+            .end = pivot + matColMul(tMatrix, arg.end - pivot),
+            .radius = arg.radius * maxScale
+        };
         else if constexpr (std::is_same_v<T, TriangleGeometry>)
-            res = TriangleGeometry{
-                .v1 = matColMul(tMatrix, arg.v1),
-                .v2 = matColMul(tMatrix, arg.v2),
-                .v3 = matColMul(tMatrix, arg.v3),
-                .thickness = arg.thickness * maxScale
-            };
+        res = TriangleGeometry{
+            .v1 = pivot + matColMul(tMatrix, arg.v1 - pivot),
+            .v2 = pivot + matColMul(tMatrix, arg.v2 - pivot),
+            .v3 = pivot + matColMul(tMatrix, arg.v3 - pivot),
+            .thickness = arg.thickness * maxScale
+        };
         else if constexpr (std::is_same_v<T, SphereGeometry>)
             res = SphereGeometry{
-                .pos = matColMul(tMatrix, arg.pos),
+                .pos = pivot + matColMul(tMatrix, arg.pos - pivot),
                 .radius = arg.radius * maxScale
             };
         else if constexpr (std::is_same_v<T, CuboidGeometry>)
-            res = CuboidGeometry{
-                .v1 = matColMul(tMatrix, arg.v1),
-                .v2 = matColMul(tMatrix, arg.v2),
-                .thickness = arg.thickness * maxScale
-            };
-        else if constexpr (std::is_same_v<T, MeshGeometry>) {}
+        res = CuboidGeometry{
+            .v1 = pivot + matColMul(tMatrix, arg.v1 - pivot),
+            .v2 = pivot + matColMul(tMatrix, arg.v2 - pivot),
+            .thickness = arg.thickness * maxScale
+        };
+        else if constexpr (std::is_same_v<T, MeshGeometry>) 
+        res = MeshGeometry{
+            .mesh = arg.mesh,
+            .isWireframe = arg.isWireframe,
+            .transformation = transformation,
+            .thickness = arg.thickness
+        };
         else
-            static_assert(false, "non-exhaustive visitor!");
+        static_assert(false, "non-exhaustive visitor!");
     }, geometry);
-    
+        
     return res;
 }
 void Object::setGeometry(Geometry newGeometry) {
@@ -120,13 +128,15 @@ void Object::translate(Vec3 translation) {
     transformation.translation = translation;
     toRerender = true;
 }
-void Object::rotate(Vec3 rotation, Vec3 pivot) {
+void Object::rotate(Vec3 rotation) {
     transformation.rotation = rotation;
-    transformation.pivot = pivot;
     toRerender = true;
 }
-void Object::scale(Vec3 factors, Vec3 pivot) {
+void Object::scale(Vec3 factors) {
     transformation.scale = factors;
+    toRerender = true;
+}
+void Object::setPivot(Vec3 pivot) {
     transformation.pivot = pivot;
     toRerender = true;
 }
@@ -139,17 +149,41 @@ Scene::Scene() {
     lastId = 0;
 }
 ObjectId Scene::nextId() {
-    return lastId++;
+    printf("next id: %d", lastId+1);
+    return ++lastId;
 }
 ObjectId Scene::createObject(const Geometry& initGeometry, const Color& initColor, ClippingBehavior initClippingBehavior) {
-    Object newObj = Object(nextId(), initGeometry, initColor, initClippingBehavior);
+    ObjectId newId = nextId();
+    Object newObj = Object(newId, initGeometry, initColor, initClippingBehavior);
     objects.push_back(newObj);
-    cout<<"created object "<< objects[objects.size()].getId()<<endl;
+    cout<<"created object "<< newId<<endl;
     idToIndex[lastId] = objects.size() - 1;
     return lastId;
 }
+Object& Scene::getObject(ObjectId id) {
+    for (auto& object : objects) {
+        if (object.getId() == id) {
+            return object;
+        }
+    }
+    throw invalid_argument("No object found with this id.");
+    cerr<<"No object found"<<endl;
+}
 void Scene::setObjectTranslation(ObjectId id, Vec3 translation) {
-
+    auto& object = getObject(id);
+    object.translate(translation);
+}
+void Scene::setObjectScale(ObjectId id, Vec3 factors) {
+    auto& object = getObject(id);
+    object.scale(factors);
+}
+void Scene::setObjectRotation(ObjectId id, Vec3 rotation) {
+    auto& object = getObject(id);
+    object.rotate(rotation);
+}
+void Scene::setObjectIntrinsicPivot(ObjectId id, Vec3 newPivot) {
+    auto& object = getObject(id);
+    object.setPivot(newPivot);
 }
 void Scene::render() {
     printf("rendering %d objects\n", objects.size());
@@ -190,7 +224,7 @@ void Scene::draw(Object& object, Render& render) {
         drawCuboid(arg, color, clippingBehavior, objectId, render);
 
     else if constexpr (std::is_same_v<T, MeshGeometry>)
-        drawMesh(arg, color, clippingBehavior, objectId, render);
+        drawMesh(arg, object.getTransformation(), color, clippingBehavior, objectId, render);
     
     else
         static_assert(false, "non-exhaustive visitor!");
@@ -427,6 +461,7 @@ void Scene::drawCuboid(
 
 void Scene::drawMesh(
     const MeshGeometry& geometry,
+    const Transformation& transformation,
     const Color& color,
     ClippingBehavior clippingBehavior,
     ObjectId objectId, 
@@ -436,6 +471,9 @@ void Scene::drawMesh(
     const auto& vertices = mesh.vertices;
     const auto& faces = mesh.faces;
 
+    const auto& tMatrix = transformation.getMatrix();
+    float maxScale = max(max(transformation.scale.x, transformation.scale.y), transformation.scale.z);
+
     printf("2| n vert. of mesh: %d\n", vertices.size());
 
     bool isWireframe = geometry.isWireframe;
@@ -444,7 +482,11 @@ void Scene::drawMesh(
             for (int i = 0; i < 3-1; ++i) {
                 for (int j = i; j < 3; ++j) {
                     drawCapsule(
-                        {vertices[face[i]], vertices[face[j]], geometry.thickness},
+                        {
+                            matColMul(tMatrix, vertices[face[i]]), 
+                            matColMul(tMatrix, vertices[face[j]]),
+                            geometry.thickness
+                        },
                         color,
                         clippingBehavior,
                         objectId,
@@ -457,7 +499,12 @@ void Scene::drawMesh(
     else {
         for (const auto& face : faces) {
             drawTriangle(
-                {vertices[face[0]], vertices[face[1]], vertices[face[2]], geometry.thickness},
+                {
+                    matColMul(tMatrix, vertices[face[0]]),
+                    matColMul(tMatrix, vertices[face[1]]), 
+                    matColMul(tMatrix, vertices[face[2]]), 
+                    geometry.thickness
+                },
                 color,
                 clippingBehavior,
                 objectId,
@@ -466,83 +513,3 @@ void Scene::drawMesh(
         }
     }
 }
-
-
-// int main() {
-//     string pt_cloud_path = "C:/Users/robik/volumetric display simulation/pythonScripts/Volumetric-display/update_pattern_gen/pointcloud.ply";
-//     ifstream file(pt_cloud_path);
-//     stringstream buffer;
-
-//     buffer << file.rdbuf();
-//     string fileStr = buffer.str();
-
-//     ptCloud points;
-//     int pointCountTarget = 0;
-//     int i = 0;
-
-
-//     vector<string> splitFileStr = split(fileStr, "\n");
-
-//     for (const string& line : splitFileStr) {
-//         if (i%50000 == 0) cout << i << endl;
-//         i++;
-//         if (line.find("element vertex") != string::npos) {
-//             pointCountTarget = stoi(line.substr(15, string::npos));
-//             cout << pointCountTarget << endl;
-//         }
-//         auto floats = extractPointCloudData(line);
-//         if (floats.size() < 6) continue;
-//         points.push_back({ 
-//             Vec3{ floats[0], floats[1], floats[2] }, 
-//             Vec3{ floats[3], floats[4], floats[5] } 
-//             });
-//     }
-
-//     if (points.size() != pointCountTarget) cout << "Expected " << pointCountTarget << " Points but got " << points.size() << endl;
-//     cout << "loaded points" << endl;
-
-//     int starttime = getTime();
-
-//     auto [mapping, params] = buildGrid(points, 25);
-//     printf("built grid in: %d us\n", getTime() - starttime);
-
-//     ptCloud test;
-//     Mesh sphere = loadMeshObj("C:/Users/robik/volumetric display simulation/pythonScripts/test.obj");
-//     //vertices
-     
-//     starttime = getTime();
-    
-//     for (const Vec3& ptCoords : sphere.vertices) {
-//         Vec3 scaledPtCoords = transform(ptCoords, 0, 0, 20, 20);
-//         ptCloud newPts = drawParticle(scaledPtCoords, mapping, params, 0.7);
-//         test.insert(test.end(), newPts.begin(), newPts.end());
-//     }
-//     printf("drew sphere %d points in: %d us\n", sphere.vertices.size(), getTime() - starttime);
-//     //edges
-    
-//     starttime = getTime();
-
-//     for (const auto& lineIndices : sphere.edges) {
-//         const Vec3& a = sphere.vertices[lineIndices.first], b = sphere.vertices[lineIndices.second];
-//         Vec3 as = transform(a, 0, 0, 27.5, 27);
-//         Vec3 bs = transform(b, 0, 0, 27.5, 27);
-//         ptCloud newPts = drawLine(as, bs, mapping, params, 0.6);
-//         test.insert(test.end(), newPts.begin(), newPts.end());
-//     }
-//     printf("drew %d sphere edges in: %d us\n", sphere.edges.size(), getTime() - starttime);
-
-//     starttime = getTime();
-
-//     for (const auto& lineIndices : sphere.faces) {
-//         const Vec3& a = sphere.vertices[lineIndices[0]], b = sphere.vertices[lineIndices[1]], c = sphere.vertices[lineIndices[2]];
-//         Vec3 as = transform(a, 0, 0, 21, 20);
-//         Vec3 bs = transform(b, 0, 0, 21, 20);
-//         Vec3 cs = transform(c, 0, 0, 21, 20);
-//         ptCloud newPts = drawTriangle(as, bs, cs, mapping, params, 0.2);
-//         test.insert(test.end(), newPts.begin(), newPts.end());
-//     }
-//     printf("drew %d sphere faces in: %d us\n", sphere.faces.size(), getTime() - starttime);
-
-//     cout << "writing" << endl;
-//     writePtcloudToFile(test, "C:/Users/robik/Downloads/test.ply");
-// }
