@@ -99,7 +99,7 @@ void writeRenderToFile(const Render& render, const string& path) {
     for (const RenderedPoint& pt : render) {
         const Vec3& pos = pt.pos;
         const Vec3& norm = pt.normal;
-        Color color = pt.color;
+        Color1b color = pt.color;
         RenderFile << pos.x << " " << pos.y << " " << pos.z
             << " " << norm.x << " " << norm.y << " " << norm.z 
             << " " << in(color.r) << " " << in(color.g) << " " << in(color.b)

@@ -13,18 +13,23 @@ struct Vec3 {
 
 using Mat4 = std::array<std::array<float, 4>, 4>;
 struct Color {
+    float r;
+    float g;
+    float b;
+};
+struct Color1b {
     bool r;
     bool g;
     bool b;
 };
-const Color RED = {true, false, false}; 
-const Color GREEN = {false, true, false};
-const Color BLUE = {false, false, true};
-const Color WHITE = {true, true, true};
-const Color BLACK = {false, false, false};
-const Color CYAN = {false, true, true};
-const Color MAGENTA = {true, false, true};
-const Color YELLOW = {true, true, false};
+const Color RED =     {1, 0, 0}; 
+const Color GREEN =   {0, 1, 0};
+const Color BLUE =    {0, 0, 1};
+const Color WHITE =   {1, 1, 1};
+const Color BLACK =   {0, 0, 0};
+const Color CYAN =    {0, 1, 1};
+const Color MAGENTA = {1, 0, 1};
+const Color YELLOW =  {1, 1, 0};
 
 enum ClippingBehavior {
     ADD,
@@ -63,7 +68,7 @@ struct RenderedPoint {
     PointDisplayParams pointDisplayParams;
     Vec3 pos;
     Vec3 normal;
-    Color color;
+    Color1b color;
     ClippingBehavior clippingBehavior;
 };
 

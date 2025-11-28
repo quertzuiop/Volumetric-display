@@ -96,7 +96,7 @@ class Scene {
         void setObjectTranslation(ObjectId id, Vec3 newTranslation);
         void setObjectRotation(ObjectId id, Vec3 newRotation);
         void setObjectScale(ObjectId id, Vec3 newScale);
-        void setObjectIntrinsicPivot(ObjectId id, Vec3 newPivot)
+        void setObjectIntrinsicPivot(ObjectId id, Vec3 newPivot);
 
     Scene();
     private:
