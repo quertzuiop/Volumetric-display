@@ -76,6 +76,7 @@ struct UpdatePatternPoint {
     PointDisplayParams pointDisplayParams;
     Vec3 pos;
     Vec3 normal;
+    float ditherRank;
 };
 
 using Render = std::vector<RenderedPoint>;

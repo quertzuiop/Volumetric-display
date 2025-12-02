@@ -8,6 +8,7 @@
 #include <sstream>
 #include <chrono>
 #include <random>
+#include <cmath>
 
 #include "../include/types.h"
 #include "../include/math.h"
@@ -19,14 +20,13 @@ using namespace std;
 int getTime() {
     return chrono::duration_cast<chrono::microseconds> (chrono::system_clock::now().time_since_epoch()).count();
 }
-Color1b dither(Color color) {
-    float thresholdR = (float) rand() / (float) RAND_MAX;
-    float thresholdG = (float) rand() / (float) RAND_MAX;
-    float thresholdB = (float) rand() / (float) RAND_MAX;
-
-    bool r = color.r > thresholdR;
-    bool g = color.g > thresholdG;
-    bool b = color.b > thresholdB;
+Color1b dither(Color color, float ditherRank) {
+    printf("rank: %f color: %f\n", ditherRank, color.r);
+    bool r = powf(color.r, 1.5) > ditherRank;
+    //bool g = powf(color.g, 1.5) > fmod(ditherRank + 0.333 ,1.);
+    // bool r = false;
+    bool g = false;
+    bool b = powf(color.b, 1.5) > fmod(ditherRank + 0.666, 1.);
     return {r, g, b};
 }
 Mat4 Transformation::getMatrix() const {
@@ -261,7 +261,7 @@ void Scene::drawParticle( //can have parts cut off, points sampled from 1 cell
     for (const UpdatePatternPoint& pt : bucket) {
         Vec3 potentialPtCoords = pt.pos;
         double d2 = dist2(pos, potentialPtCoords);
-        if (d2 <= radius2) render.push_back({objectId, pt.pointDisplayParams, pos, pt.normal, dither(color), clippingBehavior});
+        if (d2 <= radius2) render.push_back({objectId, pt.pointDisplayParams, pos, pt.normal, dither(color, pt.ditherRank), clippingBehavior});
     }
 }
 
@@ -312,7 +312,7 @@ void Scene::drawCapsule(
                 d2 = magnitude_2(cross(vec, v1)) / length2;
             }
 
-            if (d2 < radius2 ) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color), clippingBehavior });
+            if (d2 < radius2 ) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });
         }
     }
 }
@@ -382,7 +382,7 @@ void Scene::drawTriangle(
             else {
                 d2 = pow(dot(normal, p1), 2) /magNormal;
             }
-            if (d2 < thickness2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color), clippingBehavior });
+            if (d2 < thickness2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });
         }
     }
 }
@@ -418,7 +418,7 @@ void Scene::drawSphere (
             float d2 = dist2(ptCoords, pos);
             //printf("d2: %f, r2: %f\n");
             if (thickness > 0 && d2 < (2 * radius * thickness - radius2)) continue; // magic math supr
-            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal,dither(color), clippingBehavior });;
+            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });
         }
     }
 }
@@ -461,7 +461,7 @@ void Scene::drawCuboid(
                 maxV.x > ptCoords.x &&
                 maxV.y > ptCoords.y &&
                 maxV.z > ptCoords.z){
-                    render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color), clippingBehavior });;
+                    render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });;
                 }
                     
         }

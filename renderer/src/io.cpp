@@ -180,24 +180,26 @@ UpdatePattern loadUpdatePattern(string path) {
         vector<string> lineInfo = split(line);
         //516 31 31 1 1 1 1 -1.5826960226627385,31.46021413308955,0 0.025122159089884737,-0.49936847830300873,0 -4.409725716973366,-31.761680042168166,0.5 -6.0175438987259895,0.19790256922439192,0.5
         assert(lineInfo.size() >= 9);
-
+        
         int frameIndex = stoi(lineInfo[0]);
         int index1 = stoi(lineInfo[1]);
         int index2 = stoi(lineInfo[2]);
         array<bool, 4> pattern {lineInfo[3] == "1", lineInfo[4] == "1", lineInfo[5] == "1", lineInfo[6] == "1"};
-
+        
         int i = 0;
         for (int j = 0; j < 4; ++j) {
             bool isPixelOn = pattern[j];
             if (isPixelOn) {
                 bool isDisplay1 = j < 2;
                 uint16_t index = isDisplay1 ? index1 : index2;
+                vector<string> ditherAndPos = split(lineInfo[7 + i], "|");
+                float ditherRank = stof(ditherAndPos[0]);
+                vector<string> posStr = split(ditherAndPos[1], ",");
 
-                vector<string> posStr = split(lineInfo[7 + i], ",");
                 assert(posStr.size() == 3);
                 Vec3 pos = { stof(posStr[0]), stof(posStr[1]), stof(posStr[2])};
 
-                UpdatePatternPoint newPt = { {(uint16_t) frameIndex, (uint16_t) index, isDisplay1}, pos };
+                UpdatePatternPoint newPt = { .pointDisplayParams = {(uint16_t) frameIndex, (uint16_t) index, isDisplay1}, .pos = pos, .ditherRank=ditherRank};
                 res.push_back(newPt);
 
                 ++i;
