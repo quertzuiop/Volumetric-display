@@ -9,10 +9,10 @@ int main() {
 
     //SphereGeometry origin = {.pos = {0, 0, 20}, .radius = 5, .thickness= 0.5};
     float size = 50. / 10.;
-    CuboidGeometry cube = {.v1 = {-size/2, -32, -size/2}, .v2 = {size/2, 32, 64} };
+    CuboidGeometry cube = {.v1 = {-size/2, -size, -size/2}, .v2 = {size/2, size, size} };
     for (int i = 0; i < 10; ++i) {
-        // ObjectId newObj = scene.createObject(cube, {(float) i /9, 1-((float) i/9), 1});
-        ObjectId newObj = scene.createObject(cube, {(float) i /9, (float) i /9, (float) i /9});
+        ObjectId newObj = scene.createObject(cube, {(float) i /9, 1-((float) i/9), 1});
+        //ObjectId newObj = scene.createObject(cube, {(float) i /9, 1-(float) i /9, 1});
         printf("r: %f g: %f\n", (float) i /9, 1-((float) i/9));
         scene.setObjectTranslation(newObj, {(50/2) - (size+1)*i, 0, size});
     }

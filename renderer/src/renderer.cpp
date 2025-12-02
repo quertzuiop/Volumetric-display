@@ -20,15 +20,7 @@ using namespace std;
 int getTime() {
     return chrono::duration_cast<chrono::microseconds> (chrono::system_clock::now().time_since_epoch()).count();
 }
-Color1b dither(Color color, float ditherRank) {
-    printf("rank: %f color: %f\n", ditherRank, color.r);
-    bool r = powf(color.r, 1.5) > ditherRank;
-    //bool g = powf(color.g, 1.5) > fmod(ditherRank + 0.333 ,1.);
-    // bool r = false;
-    bool g = false;
-    bool b = powf(color.b, 1.5) > fmod(ditherRank + 0.666, 1.);
-    return {r, g, b};
-}
+
 Mat4 Transformation::getMatrix() const {
     printf("getting matrix\n");
     float x = rotation.x;
@@ -461,7 +453,7 @@ void Scene::drawCuboid(
                 maxV.x > ptCoords.x &&
                 maxV.y > ptCoords.y &&
                 maxV.z > ptCoords.z){
-                    render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });;
+                    render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, ptCoords), clippingBehavior });;
                 }
                     
         }
