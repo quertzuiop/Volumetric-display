@@ -15,6 +15,7 @@
 #include "../include/grid.h"
 #include "../include/io.h"
 #include "../include/renderer.h"
+#include "../include/dither.h"
 using namespace std;
 
 int getTime() {
@@ -253,7 +254,7 @@ void Scene::drawParticle( //can have parts cut off, points sampled from 1 cell
     for (const UpdatePatternPoint& pt : bucket) {
         Vec3 potentialPtCoords = pt.pos;
         double d2 = dist2(pos, potentialPtCoords);
-        if (d2 <= radius2) render.push_back({objectId, pt.pointDisplayParams, pos, pt.normal, dither(color, pt.ditherRank), clippingBehavior});
+        if (d2 <= radius2) render.push_back({objectId, pt.pointDisplayParams, pos, pt.normal, dither(color, potentialPtCoords), clippingBehavior});
     }
 }
 
@@ -304,7 +305,7 @@ void Scene::drawCapsule(
                 d2 = magnitude_2(cross(vec, v1)) / length2;
             }
 
-            if (d2 < radius2 ) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });
+            if (d2 < radius2 ) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, ptCoords), clippingBehavior });
         }
     }
 }
@@ -374,7 +375,7 @@ void Scene::drawTriangle(
             else {
                 d2 = pow(dot(normal, p1), 2) /magNormal;
             }
-            if (d2 < thickness2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });
+            if (d2 < thickness2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, ptCoords), clippingBehavior });
         }
     }
 }
@@ -410,7 +411,7 @@ void Scene::drawSphere (
             float d2 = dist2(ptCoords, pos);
             //printf("d2: %f, r2: %f\n");
             if (thickness > 0 && d2 < (2 * radius * thickness - radius2)) continue; // magic math supr
-            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, pt.ditherRank), clippingBehavior });
+            if (d2 < radius2) render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, ptCoords), clippingBehavior });
         }
     }
 }

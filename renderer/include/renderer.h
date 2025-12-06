@@ -5,6 +5,7 @@
 #include <variant>
 #include "types.h"
 #include "math.h"
+#include "dither.h"
 
 using namespace std;
 
