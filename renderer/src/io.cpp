@@ -166,6 +166,7 @@ bool comparePatterns(const UpdatePatternPoint& p1, const UpdatePatternPoint& p2)
 }
 
 UpdatePattern loadUpdatePattern(string path) {
+    cout<<"loading update pattern file into memory"<<endl;
     ifstream file(path);
     stringstream buffer;
 
@@ -174,7 +175,7 @@ UpdatePattern loadUpdatePattern(string path) {
 
     vector<string> splitFileStr = split(fileStr, "\n");
     UpdatePattern res;
-
+    cout<<"parsing update pattern file"<<endl;
     for (const string& line : splitFileStr) {
         if (line == "") continue;
         vector<string> lineInfo = split(line);

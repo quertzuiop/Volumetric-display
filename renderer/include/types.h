@@ -4,6 +4,7 @@
 #include<unordered_map>
 #include<variant>
 #include<array>
+#include<stdint.h>
 
 struct Vec3 {
     float x;

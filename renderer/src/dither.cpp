@@ -1,6 +1,8 @@
 #include<array>
 #include<vector>
 #include<assert.h>
+#include<cmath>
+#include<cstdio>
 #include "../include/types.h"
 
 using namespace std;

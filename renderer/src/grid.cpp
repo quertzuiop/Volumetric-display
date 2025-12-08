@@ -1,5 +1,8 @@
 #include<array>
 #include<iostream>
+#include<cmath>
+#include<cstdio>
+
 #include "../include/types.h"
 
 using namespace std;
