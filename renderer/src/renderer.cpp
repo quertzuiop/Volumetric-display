@@ -188,7 +188,7 @@ void Scene::setObjectIntrinsicPivot(ObjectId id, Vec3 newPivot) {
     auto& object = getObject(id);
     object.setPivot(newPivot);
 }
-void Scene::render() {
+void Scene::render(bool writeToFile) {
     printf("rendering %d objects\n", objects.size());
     Render render;
     for (Object& object : objects) {
@@ -197,7 +197,11 @@ void Scene::render() {
             object.toRerender = false;
         }
     }
-    writeRenderToFile(render, "output/render.ply");
+    if (writeToFile) {
+        writeRenderToFile(render, "output/render.ply");
+    } else {
+        
+    }
 }
 
 void Scene::draw(Object& object, Render& render) {
