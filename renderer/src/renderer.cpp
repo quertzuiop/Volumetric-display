@@ -10,12 +10,14 @@
 #include <random>
 #include <cmath>
 
-#include "../include/types.h"
-#include "../include/math.h"
-#include "../include/grid.h"
-#include "../include/io.h"
-#include "../include/renderer.h"
-#include "../include/dither.h"
+#include "types.h"
+#include "math.h"
+#include "grid.h"
+#include "io.h"
+#include "renderer.h"
+#include "dither.h"
+#include "shm.h"
+
 using namespace std;
 
 int getTime() {
@@ -197,10 +199,23 @@ void Scene::render(bool writeToFile) {
             object.toRerender = false;
         }
     }
+    lastRender = render;
     if (writeToFile) {
         writeRenderToFile(render, "output/render.ply");
     } else {
-        
+        ShmVoxelFrame& frame = shmPointer->data;
+        for (const RenderedPoint& renderedPoint : render) {
+            const PointDisplayParams& params = renderedPoint.pointDisplayParams;
+            ShmVoxelSlice& targetSlice = frame[params.sliceIndex];
+            uint8_t& colIndex = params.isDisplay1 ? targetSlice.index1 : targetSlice.index2; 
+            colIndex = params.colIndex;
+            targetSlice.data[params.rowIndex] = static_cast<uint8_t>(renderedPoint.color);
+            /*
+            set update pattern info(index1, index2 for each slice)
+            generate list of indices of columns to iterate over (exclude empty ones)
+
+            */
+        }
     }
 }
 
@@ -211,31 +226,41 @@ void Scene::draw(Object& object, Render& render) {
     auto objectId = object.getId();
 
     printf("-drawing object with id %d\n", (int) objectId);
-
+    Render pointsToAdd = {};
     visit([&](auto&& arg)
     {
     using T = std::decay_t<decltype(arg)>;
     if constexpr (std::is_same_v<T, ParticleGeometry>)
-        drawParticle(arg, color, clippingBehavior, objectId, render);
+        drawParticle(arg, color, clippingBehavior, objectId, pointsToAdd);
 
     else if constexpr (std::is_same_v<T, CapsuleGeometry>)
-        drawCapsule(arg, color, clippingBehavior, objectId, render);
+        drawCapsule(arg, color, clippingBehavior, objectId, pointsToAdd);
 
     else if constexpr (std::is_same_v<T, TriangleGeometry>)
-        drawTriangle(arg, color, clippingBehavior, objectId, render);
+        drawTriangle(arg, color, clippingBehavior, objectId, pointsToAdd);
 
     else if constexpr (std::is_same_v<T, SphereGeometry>)
-        drawSphere(arg, color, clippingBehavior, objectId, render);
+        drawSphere(arg, color, clippingBehavior, objectId, pointsToAdd);
 
     else if constexpr (std::is_same_v<T, CuboidGeometry>)
-        drawCuboid(arg, color, clippingBehavior, objectId, render);
+        drawCuboid(arg, color, clippingBehavior, objectId, pointsToAdd);
 
     else if constexpr (std::is_same_v<T, MeshGeometry>)
-        drawMesh(arg, object.getTransformation(), color, clippingBehavior, objectId, render);
+        drawMesh(arg, object.getTransformation(), color, clippingBehavior, objectId, pointsToAdd);
     
     else
         static_assert(false, "non-exhaustive visitor!");
     }, geometry);
+
+    //add negative points (remove ones from last render)
+    for (RenderedPoint& lastRenderPoint : lastRender) {
+        if (lastRenderPoint.objectId == objectId) {
+            lastRenderPoint.objectId = (ObjectId)-1; // uint32_t max
+            lastRenderPoint.color = BLACK;
+            render.push_back(lastRenderPoint);
+        }
+    }
+    render.insert(render.end(), pointsToAdd.begin(), pointsToAdd.end());
 }
 
 

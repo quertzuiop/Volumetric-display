@@ -13,15 +13,33 @@ struct Vec3 {
 };
 
 using Mat4 = std::array<std::array<float, 4>, 4>;
-struct Color {
-    float r;
-    float g;
-    float b;
-};
+
 struct Color1b {
     bool r;
     bool g;
     bool b;
+
+    inline operator uint8_t() const {
+        return
+            static_cast<uint8_t>(
+              (r ? (1u<<2) : 0u)
+            | (g ? (1u<<1) : 0u)
+            | (b ? 1u : 0u)
+        );
+    }
+};
+struct Color {
+    float r;
+    float g;
+    float b;
+
+    inline operator Color1b() const {
+        return {
+            r>0.5,
+            g>0.5,
+            b>0.5
+        };
+    }
 };
 const Color RED =     {1, 0, 0}; 
 const Color GREEN =   {0, 1, 0};
@@ -55,10 +73,10 @@ struct GridParams {
 using Point = std::pair<Vec3, Vec3>;
 using ptCloud = std::vector<Point>;
 
-using ObjectId = uint32_t;
+using ObjectId = uint32_t; //::MAX is reserved for negative points
 
 struct PointDisplayParams {
-    uint16_t frameIndex;
+    uint16_t sliceIndex;
     uint16_t rowIndex;
     uint16_t colIndex;
     bool isDisplay1;

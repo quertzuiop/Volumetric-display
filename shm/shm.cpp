@@ -54,7 +54,6 @@ ShmLayout* openShm(const char* name) {
 }
 void writeShm(ShmLayout* basePtr, const ShmVoxelFrame& newFrame) {
     if (basePtr) {
-        // Direct copy into SHM (fast memcpy)
         std::memcpy(&basePtr->data, &newFrame, sizeof(ShmVoxelFrame));
     }
 }

@@ -8,6 +8,7 @@
 #include "types.h"
 #include "math.h"
 #include "dither.h"
+#include "shm.h"
 
 using namespace std;
 
@@ -108,6 +109,10 @@ class Scene {
         unordered_map<ObjectId, uint32_t> idToIndex;
         ObjectId nextId();
 
+        ShmLayout* shmPointer;
+
+        Render lastRender = {};
+        
         void draw(Object& object, Render& render);
         void drawParticle(
             const ParticleGeometry& geometry,
