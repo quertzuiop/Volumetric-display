@@ -1,4 +1,3 @@
-#pragma once
 #include"../include/types.h"
 
 std::tuple<Vec3, Vec3> arrangeBoundingBox(const Vec3& p1, const Vec3& p2) {

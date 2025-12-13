@@ -34,7 +34,7 @@ ShmLayout* initShm(const Header header, const char* name) {
 }
 
 ShmLayout* openShm(const char* name) {
-    int g_fd = shm_open(name, O_RDWR, 0666);
+    int g_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
     if (g_fd == -1) {
         if (errno == ENOENT) {
             cerr << "Driver not running (SHM not found)." << endl;

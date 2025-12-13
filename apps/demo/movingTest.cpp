@@ -12,5 +12,5 @@ int main() {
     scene.setObjectTranslation(sphere, {1, 0, 0});
     scene.render(true);
     scene.setObjectTranslation(sphere, {0, 0.5, 0});
-    scene.render(true);
+    scene.render();
 }

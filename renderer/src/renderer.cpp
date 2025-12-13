@@ -209,7 +209,9 @@ void Scene::render(bool writeToFile) {
             ShmVoxelSlice& targetSlice = frame[params.sliceIndex];
             uint8_t& colIndex = params.isDisplay1 ? targetSlice.index1 : targetSlice.index2; 
             colIndex = params.colIndex;
-            targetSlice.data[params.rowIndex] = static_cast<uint8_t>(renderedPoint.color);
+            
+            int colNumber = (static_cast<int>(params.isDisplay1) * 2) + static_cast<int>(params.isSide1);
+            targetSlice.data[colNumber] = static_cast<uint8_t>(renderedPoint.color);
             /*
             set update pattern info(index1, index2 for each slice)
             generate list of indices of columns to iterate over (exclude empty ones)

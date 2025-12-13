@@ -192,23 +192,28 @@ UpdatePattern loadUpdatePattern(string path) {
             bool isPixelOn = pattern[j];
             if (isPixelOn) {
                 bool isDisplay1 = j < 2;
+                bool isSide1 = j%2==0;
                 uint16_t index = isDisplay1 ? index1 : index2;
-                vector<string> ditherAndPos = split(lineInfo[7 + i], "|");
-                float ditherRank = stof(ditherAndPos[0]);
-                vector<string> posStr = split(ditherAndPos[1], ",");
+                vector<string> posStr = split(lineInfo[7 + i], ",");
 
                 assert(posStr.size() == 3);
                 Vec3 pos = { stof(posStr[0]), stof(posStr[1]), stof(posStr[2])};
 
-                UpdatePatternPoint newPt = {
-                    .pointDisplayParams = {
-                        .sliceIndex = (uint16_t) sliceIndex, 
-                        .colIndex = (uint16_t) index, 
-                        .isDisplay1 = isDisplay1
-                    },
-                    .pos = pos, .ditherRank=ditherRank
-                };
-                res.push_back(newPt);
+                for (uint16_t rowIndex = 0; rowIndex < 64; ++rowIndex) {
+                    Vec3 newPos = pos;
+                    UpdatePatternPoint newPt = {
+                        .pointDisplayParams = {
+                            .sliceIndex = (uint16_t) sliceIndex, 
+                            .colIndex = (uint16_t) index, 
+                            .rowIndex = rowIndex,
+                            .isDisplay1 = isDisplay1,
+                            .isSide1 = isSide1
+                        },
+                        .pos = pos, .ditherRank=1
+                    };
+                    res.push_back(newPt);
+                    pos.z += 1;
+                }
 
                 ++i;
             }
