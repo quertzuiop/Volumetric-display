@@ -35,5 +35,5 @@ int main() {
     //auto meshObj = scene.createObject(geom, RED);
     //scene.setObjectRotation(meshObj, {3.1415/2, 0, 0}, {0, 0, 0});
     //scene.setObjectScale(meshObj, {20, 20, 20});
-    scene.render(true);
+    scene.render();
 }   

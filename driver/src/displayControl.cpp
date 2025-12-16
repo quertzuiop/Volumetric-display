@@ -103,8 +103,8 @@ ColorGroupInterface::ColorGroupInterface (int colorPins[6], int clockPin) {
 }
 
 void ColorGroupInterface::pushColor(int c1, int c2) {
-    int regVal = ((c1 & 1)<<pinNums[0]) | ((c1>>1 & 1)<<pinNums[1]) | ((c1>>2 & 1)<<pinNums[2])
-                | ((c2 & 1)<<pinNums[3]) | ((c2>>1 & 1)<<pinNums[4]) | ((c2>>2 & 1)<<pinNums[5]);
+    int regVal = ((c1>>2 & 1)<<pinNums[0]) | ((c1>>1 & 1)<<pinNums[1]) | ((c1 & 1)<<pinNums[2])
+                | ((c2>>2 & 1)<<pinNums[3]) | ((c2>>1 & 1)<<pinNums[4]) | ((c2 & 1)<<pinNums[5]);
     GPIO_SET = regVal;
     GPIO_SET = (1<<clockPinNum);
     tiny_wait(15);
@@ -119,8 +119,10 @@ AddressInterface::AddressInterface(int pins[5]) {
     }
 }
 void AddressInterface::setAddress(int address) {
+    
     for (int i = 0; i < 5; i++) {
-        if ((address>>i)%2==1) {
+        // tiny_wait(5000);
+        if ((address>>i)%2==1) { //get nth bit
             GPIO_SET = (1<<addressPins[i]);
         }
         else {
@@ -137,17 +139,20 @@ OutputInterface::OutputInterface(int latchPin_, int oePin_) {
 }
 
 void OutputInterface::show() {
-    GPIO_SET = (1<<oePin);
     GPIO_SET = (1<<latchPin);
     tiny_wait(10);
     GPIO_CLR = (1<<latchPin);
     GPIO_CLR = (1<<oePin);
+    tiny_wait(2000);
+    usleep(10);
+    GPIO_SET = (1<<18);
 }
 void OutputInterface::latch() {
     GPIO_SET = (1<<latchPin);
     tiny_wait(10);
     GPIO_CLR = (1<<latchPin);
     tiny_wait(5);
+    
 }
 
 void OutputInterface::enableOutput(bool enable) {

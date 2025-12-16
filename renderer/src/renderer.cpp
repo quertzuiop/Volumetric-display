@@ -152,6 +152,13 @@ Scene::Scene() {
     mapping = mapping_;
     params = params_;
     lastId = 0;
+
+    shmPointer = openShm("vdshm");
+    for (auto& slice : shmPointer->data) {
+        for (auto& voxel : slice.data) {
+            voxel = 0;
+        }
+    }
 }
 ObjectId Scene::nextId() {
     printf("next id: %d", lastId+1);
@@ -199,6 +206,7 @@ void Scene::render(bool writeToFile) {
             object.toRerender = false;
         }
     }
+    
     lastRender = render;
     if (writeToFile) {
         writeRenderToFile(render, "output/render.ply");
@@ -207,11 +215,14 @@ void Scene::render(bool writeToFile) {
         for (const RenderedPoint& renderedPoint : render) {
             const PointDisplayParams& params = renderedPoint.pointDisplayParams;
             ShmVoxelSlice& targetSlice = frame[params.sliceIndex];
-            uint8_t& colIndex = params.isDisplay1 ? targetSlice.index1 : targetSlice.index2; 
+            uint8_t& colIndex = params.isDisplay1 ? targetSlice.index1 : targetSlice.index2;
+            //printf("Diplay one: %d\n", params.isDisplay1);
             colIndex = params.colIndex;
-            
-            int colNumber = (static_cast<int>(params.isDisplay1) * 2) + static_cast<int>(params.isSide1);
-            targetSlice.data[colNumber] = static_cast<uint8_t>(renderedPoint.color);
+            int baseIndexNumber = (static_cast<int>(!params.isDisplay1) * 128) + static_cast<int>(!params.isSide1)*64;
+            if (baseIndexNumber == 64) {
+                printf("col index %d, side: %d base index: %d, cell index: %d\n", colIndex, params.isSide1, baseIndexNumber, params.rowIndex);
+            }
+            targetSlice.data[baseIndexNumber+params.rowIndex] = static_cast<uint8_t>(renderedPoint.color);
             /*
             set update pattern info(index1, index2 for each slice)
             generate list of indices of columns to iterate over (exclude empty ones)

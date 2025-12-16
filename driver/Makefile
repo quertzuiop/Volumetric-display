@@ -1,7 +1,7 @@
 CXX = g++
-CXXFLAGS = -O2 -pthread -std=c++20 -I../renderer/include -I../shm -I ./include
+CXXFLAGS = -O2 -pthread -std=c++20 -I../shm -I ./include
 
-SRCS = ./src/driver.cpp ./src/displayControl.cpp $(wildcard ../renderer/src/*.cpp) ../shm/shm.cpp
+SRCS = ./src/driver.cpp ./src/displayControl.cpp ../shm/shm.cpp
 OUTPUT = ./build/main
 
 all:

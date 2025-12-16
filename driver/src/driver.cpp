@@ -47,13 +47,18 @@ int main() {
             printf("Frame %d\n", frameNum);
         }
         for (const ShmVoxelSlice& slice : frame) {
-            auto index1 = slice.index1;
+            auto index1 = 32-static_cast<int> (slice.index1);
+            //printf("\nindex: %d\n", index1);
             addressInterface.setAddress(index1);
             for(int i = 0; i < 64; i++) {
-                colorGroup.pushColor(slice.data[i], slice.data[i+64]);
+                // if (slice.data[i] != 0) {
+                //     printf("%d ", slice.data[i]);
+                // }
+                colorGroup.pushColor(slice.data[i], slice.data[64+i]);
             }
             outputInterface.show();
-        }        
+            // usleep(10000);
+        }
         frameNum++;
     }
 }

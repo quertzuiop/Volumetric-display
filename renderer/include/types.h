@@ -77,8 +77,8 @@ using ObjectId = uint32_t; //::MAX is reserved for negative points
 
 struct PointDisplayParams {
     uint16_t sliceIndex;
-    uint16_t colIndex;
-    uint16_t rowIndex;
+    uint8_t colIndex;
+    uint8_t rowIndex;
     bool isDisplay1;
     bool isSide1;
 };

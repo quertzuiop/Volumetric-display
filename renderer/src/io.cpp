@@ -199,12 +199,12 @@ UpdatePattern loadUpdatePattern(string path) {
                 assert(posStr.size() == 3);
                 Vec3 pos = { stof(posStr[0]), stof(posStr[1]), stof(posStr[2])};
 
-                for (uint16_t rowIndex = 0; rowIndex < 64; ++rowIndex) {
+                for (uint8_t rowIndex = 0; rowIndex < 64; ++rowIndex) {
                     Vec3 newPos = pos;
                     UpdatePatternPoint newPt = {
                         .pointDisplayParams = {
                             .sliceIndex = (uint16_t) sliceIndex, 
-                            .colIndex = (uint16_t) index, 
+                            .colIndex = (uint8_t) index, 
                             .rowIndex = rowIndex,
                             .isDisplay1 = isDisplay1,
                             .isSide1 = isSide1
