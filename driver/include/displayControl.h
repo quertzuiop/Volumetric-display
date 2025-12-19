@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <chrono>
+
 #ifndef DISPLAY_CONTROL_H
 #define DISPLAY_CONTROL_H
 class ColorGroupInterface {
@@ -19,7 +21,7 @@ class AddressInterface {
 class OutputInterface {
     public:
         int latchPin, oePin;
-        void show();
+        void showUntil(std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::nano>> stopTime);
         void enableOutput(bool enable);
         void latch();
     OutputInterface(int latchPin_, int oePin_);

@@ -11,6 +11,9 @@ const int fps = 24;
 const float sliceDurationUs = 1000000/fps/2000;
 
 using namespace std;
+using namespace chrono_literals;
+using Time = chrono::steady_clock;
+
 int main() {
 
     cpu_set_t cpus;
@@ -39,15 +42,27 @@ int main() {
     ShmLayout *shmPointer = initShm(header, "vdshm");
     ShmVoxelFrame& frame = shmPointer->data;
 
-    typedef chrono::system_clock Time;
-    auto startTime = Time::now;
+    auto startTime = Time::now();
     int frameNum = 0;
     while (true) {
+        auto frameStartTime = Time::now();
+        double frameDurationSeconds = 1.0 / 30.; 
+
+        auto frameDurationNs = chrono::duration_cast<chrono::nanoseconds>(
+            chrono::duration<double>(frameDurationSeconds)
+        );
         if (frameNum%24==0) {
             printf("Frame %d\n", frameNum);
         }
-        for (const ShmVoxelSlice& slice : frame) {
-            auto index1 = 32-static_cast<int> (slice.index1);
+        for (int i = 0; i < frame.size(); i++) {
+            const ShmVoxelSlice& slice = frame[i];
+
+            auto targetSliceEndTime = (frameDurationNs/2000 * (i+1) + frameStartTime);
+            // printf("frame duration: %lld ns\n", frameDurationNs.count());
+            // printf("slice duration: %lld ns\n", (frameDurationNs/2000 * (i+1)).count());
+            // printf("waiting until: %lld ms\n", chrono::time_point_cast<chrono::milliseconds>(targetSliceEndTime).time_since_epoch().count());
+
+            auto index1 = 31-static_cast<int> (slice.index1);
             //printf("\nindex: %d\n", index1);
             addressInterface.setAddress(index1);
             for(int i = 0; i < 64; i++) {
@@ -56,7 +71,7 @@ int main() {
                 // }
                 colorGroup.pushColor(slice.data[i], slice.data[64+i]);
             }
-            outputInterface.show();
+            outputInterface.showUntil(targetSliceEndTime);
             // usleep(10000);
         }
         frameNum++;

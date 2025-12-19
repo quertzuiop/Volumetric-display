@@ -4,18 +4,28 @@
 #include <iostream>
 #include <filesystem>
 #include <unistd.h>
+#include <chrono>
 
 int main() {
+    using namespace std::chrono;
+
     Scene scene = Scene();
-    SphereGeometry sphereG = {.pos = {0, 10, 20}, .radius=10};
-    auto sphere = scene.createObject(sphereG, RED);
+    SphereGeometry G = {.pos = {0, 0, 32}, .radius=6};
+    auto sphere = scene.createObject(G, RED);
     printf("created object");
     //scene.render();
     //scene.setObjectTranslation(sphere, {1, 0, 0});
     //scene.render();
     //scene.setObjectTranslation(sphere, {0, 0.5, 0});
+    double i = 0;
     while(true) {
-        usleep(100000);
+        auto start = steady_clock::now();
+        usleep(10000);
+        printf("X: %f\n", static_cast<float>(sin(i/10.) * 10.));
+        scene.setObjectTranslation(sphere, {static_cast<float>(sin(i/100.) * 10.), 0, 0});
         scene.render();
+        i++;
+        auto fps = 1/duration<double>(steady_clock::now() - start).count();
+        printf("fps: %f\n", fps);
     }
-}
+}   

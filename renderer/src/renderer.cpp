@@ -206,7 +206,7 @@ void Scene::render(bool writeToFile) {
             object.toRerender = false;
         }
     }
-    
+    printf("writing render with %d points\n", render.size());
     lastRender = render;
     if (writeToFile) {
         writeRenderToFile(render, "output/render.ply");
@@ -219,9 +219,9 @@ void Scene::render(bool writeToFile) {
             //printf("Diplay one: %d\n", params.isDisplay1);
             colIndex = params.colIndex;
             int baseIndexNumber = (static_cast<int>(!params.isDisplay1) * 128) + static_cast<int>(!params.isSide1)*64;
-            if (baseIndexNumber == 64) {
-                printf("col index %d, side: %d base index: %d, cell index: %d\n", colIndex, params.isSide1, baseIndexNumber, params.rowIndex);
-            }
+            // if (baseIndexNumber == 64) {
+            //     printf("col index %d, side: %d base index: %d, cell index: %d\n", colIndex, params.isSide1, baseIndexNumber, params.rowIndex);
+            // }
             targetSlice.data[baseIndexNumber+params.rowIndex] = static_cast<uint8_t>(renderedPoint.color);
             /*
             set update pattern info(index1, index2 for each slice)

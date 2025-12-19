@@ -138,13 +138,12 @@ OutputInterface::OutputInterface(int latchPin_, int oePin_) {
     pinInit(oePin, true);
 }
 
-void OutputInterface::show() {
+void OutputInterface::showUntil(time_point<steady_clock, duration<double, std::nano>> stopTime) {
     GPIO_SET = (1<<latchPin);
     tiny_wait(10);
     GPIO_CLR = (1<<latchPin);
     GPIO_CLR = (1<<oePin);
-    tiny_wait(2000);
-    usleep(10);
+    while (steady_clock::now() < stopTime) {}
     GPIO_SET = (1<<18);
 }
 void OutputInterface::latch() {
