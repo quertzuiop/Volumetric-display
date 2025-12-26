@@ -17,6 +17,6 @@ int main() {
 
     auto meshObj = scene.createObject(geom, RED);
     scene.setObjectTranslation(meshObj, {0, 0, 32});
-    scene.setObjectScale(meshObj, {10, 30, 30});
+    scene.setObjectScale(meshObj, {10, 25, 25});
     scene.render();
 }   

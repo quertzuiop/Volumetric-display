@@ -46,7 +46,7 @@ int main() {
     int frameNum = 0;
     while (true) {
         auto frameStartTime = Time::now();
-        double frameDurationSeconds = 1.0 / 30.; 
+        double frameDurationSeconds = 1.0 / 24.; 
 
         auto frameDurationNs = chrono::duration_cast<chrono::nanoseconds>(
             chrono::duration<double>(frameDurationSeconds)

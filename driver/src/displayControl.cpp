@@ -43,10 +43,12 @@ list<int> initializedPins;
 
 void setAddress(int address) {
     for (int i = 0; i < 5; i++) {
-        if ((address>>i)%2==1) {
+        if ((address>>i)%2==1) { //get nth bit of address
+            tiny_wait(10);
             GPIO_SET = (1<<addressPins[i]);
         }
         else {
+            tiny_wait(10);
             GPIO_CLR = (1<<addressPins[i]);
         }
     }
@@ -107,7 +109,7 @@ void ColorGroupInterface::pushColor(int c1, int c2) {
                 | ((c2>>2 & 1)<<pinNums[3]) | ((c2>>1 & 1)<<pinNums[4]) | ((c2 & 1)<<pinNums[5]);
     GPIO_SET = regVal;
     GPIO_SET = (1<<clockPinNum);
-    tiny_wait(15);
+    tiny_wait(25); //adjust this for less flicker but less brightness
     GPIO_CLR = regVal | (1<<clockPinNum);
     tiny_wait(5);
 }

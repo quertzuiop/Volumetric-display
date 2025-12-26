@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <filesystem>
-#include "../include/types.h"
+#include "types.h"
 using namespace std;
 
 vector<float> getFloats(string str) {

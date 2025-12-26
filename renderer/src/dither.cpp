@@ -1,9 +1,8 @@
-#include<array>
 #include<vector>
 #include<assert.h>
 #include<cmath>
 #include<cstdio>
-#include "../include/types.h"
+#include "types.h"
 
 using namespace std;
 //uses the algorithm for generation bayer matrices from wikipedia generalized to 3d

@@ -1,9 +1,7 @@
 #pragma once
 #include<vector>
-#include<tuple>
 #include<unordered_map>
 #include <variant>
-#include <cmath>
 
 #include "types.h"
 #include "math.h"
