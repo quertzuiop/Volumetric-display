@@ -2,8 +2,10 @@
 
 #include <array>
 #include <cstdint>
+#include <chrono>
 
 using namespace std;
+using namespace chrono_literals;
 /*
 number of updates - quadruples
 array<uint_8, 64*4*ncolls>
@@ -31,6 +33,8 @@ struct alignas(64) Header {
 
 struct ShmLayout {
     Header header;
+    int64_t nextFrameStart;
+    int64_t nextFrameDuration = 0;
     ShmVoxelFrame data;
 };
 

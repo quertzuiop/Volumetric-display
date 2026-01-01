@@ -6,6 +6,7 @@
 #include<fcntl.h>
 #include<unistd.h>
 #include<cstring>
+#include <assert.h>
 
 
 
@@ -49,8 +50,10 @@ ShmLayout* openShm(const char* name) {
         perror("openShm: mmap failed");
         return nullptr;
     }
+    ShmLayout* layoutPtr = static_cast<ShmLayout*>(ptr);
+    assert(layoutPtr->header.signature == 0xB0B);
 
-    return static_cast<ShmLayout*>(ptr);
+    return layoutPtr;
 }
 void writeShm(ShmLayout* basePtr, const ShmVoxelFrame& newFrame) {
     if (basePtr) {

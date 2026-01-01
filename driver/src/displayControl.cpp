@@ -38,10 +38,15 @@ volatile unsigned *gpio;
 #define GPIO_PULL *(gpio+37) // Pull up/pull down
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
 
-int addressPins[] = {22, 23, 24, 25, 15};
+const int addressPins[] = {22, 23, 24, 25, 15};
 list<int> initializedPins;
 
-void setAddress(int address) {
+void setAddress(int address) { 
+    /*
+
+    TODO: try to write whole address to one variable then set whole register to value 
+    
+    */
     for (int i = 0; i < 5; i++) {
         if ((address>>i)%2==1) { //get nth bit of address
             tiny_wait(10);
@@ -140,12 +145,12 @@ OutputInterface::OutputInterface(int latchPin_, int oePin_) {
     pinInit(oePin, true);
 }
 
-void OutputInterface::showUntil(time_point<steady_clock, duration<double, std::nano>> stopTime) {
+void OutputInterface::showUntil(int64_t stopTime) {
     GPIO_SET = (1<<latchPin);
     tiny_wait(10);
     GPIO_CLR = (1<<latchPin);
     GPIO_CLR = (1<<oePin);
-    while (steady_clock::now() < stopTime) {}
+    while (std::chrono::steady_clock::now().time_since_epoch().count() < stopTime) {spin_asm();}
     GPIO_SET = (1<<18);
 }
 void OutputInterface::latch() {

@@ -21,7 +21,7 @@ class AddressInterface {
 class OutputInterface {
     public:
         int latchPin, oePin;
-        void showUntil(std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::nano>> stopTime);
+        void showUntil(int64_t stopTime);
         void enableOutput(bool enable);
         void latch();
     OutputInterface(int latchPin_, int oePin_);

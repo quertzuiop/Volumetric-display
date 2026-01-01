@@ -6,10 +6,6 @@
 #include<cstring>
 #include<iostream>
 
-
-const int fps = 24;
-const float sliceDurationUs = 1000000/fps/2000;
-
 using namespace std;
 using namespace chrono_literals;
 using Time = chrono::steady_clock;
@@ -39,25 +35,38 @@ int main() {
         .signature = 0xB0B,
         .version = 1
     };
-    ShmLayout *shmPointer = initShm(header, "vdshm");
-    ShmVoxelFrame& frame = shmPointer->data;
+    volatile ShmLayout *shmPointer = initShm(header, "vdshm");
+    volatile ShmVoxelFrame& frame = shmPointer->data;
 
     auto startTime = Time::now();
     int frameNum = 0;
+
+    //wait for speed regulator
+    while (shmPointer->nextFrameDuration == 0) {}
+    int64_t lastFrameStart = 0;
     while (true) {
-        auto frameStartTime = Time::now();
-        double frameDurationSeconds = 1.0 / 24.; 
 
-        auto frameDurationNs = chrono::duration_cast<chrono::nanoseconds>(
-            chrono::duration<double>(frameDurationSeconds)
-        );
-        if (frameNum%24==0) {
-            printf("Frame %d\n", frameNum);
-        }
-        for (int i = 0; i < frame.size(); i++) {
-            const ShmVoxelSlice& slice = frame[i];
+        // printf("frame start time: %lld\n", shmPointer->nextFrameStart);
+        // printf("last frame start time: %lld\n", shmPointer->nextFrameDuration);
 
-            auto targetSliceEndTime = (frameDurationNs/2000 * (i+1) + frameStartTime);
+        while (lastFrameStart == shmPointer->nextFrameStart) {} //if new frame hasnt started (we are ahead), wait 
+        
+        auto nextFrameStart = shmPointer->nextFrameStart;
+        auto nextFrameDuration = shmPointer->nextFrameDuration;
+        
+        lastFrameStart = nextFrameStart;
+
+        // if (frameNum%24==0) {
+        //     printf("Frame %d\n", frameNum);
+        // }
+        printf("Frame %d\n", frameNum);
+
+        for (int i = 0; i < 2000; i++) {
+            const ShmVoxelSlice& slice = (const_cast<ShmVoxelFrame&>(frame))[i];
+            //265.25
+            //192.651
+            auto tfdtwav = (nextFrameDuration/2000 * (i+1) + nextFrameStart);
+            auto targetSliceEndTime = (nextFrameDuration/2000 * (i+1) + nextFrameStart);
             // printf("frame duration: %lld ns\n", frameDurationNs.count());
             // printf("slice duration: %lld ns\n", (frameDurationNs/2000 * (i+1)).count());
             // printf("waiting until: %lld ms\n", chrono::time_point_cast<chrono::milliseconds>(targetSliceEndTime).time_since_epoch().count());
@@ -69,7 +78,7 @@ int main() {
                 // if (slice.data[i] != 0) {
                 //     printf("%d ", slice.data[i]);
                 // }
-                colorGroup.pushColor(slice.data[i], slice.data[64+i]);
+                colorGroup.pushColor(slice.data[64+i], slice.data[64+i]);
             }
             outputInterface.showUntil(targetSliceEndTime);
             // usleep(10000);

@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -O2 -pthread -std=c++20 -I../../renderer/include -I../../shm
-# List all sources: your main file + the renderer library files
+
 SRCS = objtest.cpp $(wildcard ../../renderer/src/*.cpp) ../../shm/shm.cpp
 OUTPUT = ./build/main
 
