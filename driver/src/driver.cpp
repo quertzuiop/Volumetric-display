@@ -19,12 +19,16 @@ int main() {
         cerr << "sched_setaffinity failed: " << strerror(errno) << " (continuing)\n";
     }
     setup_io();
-    int colorPins[6] = {11, 27, 7, 8, 9, 10};
-    int clockPin = 17;
-    ColorGroupInterface colorGroup(colorPins, clockPin);
 
-    int addressPins[5] = {22, 23, 24, 25, 15};
-    AddressInterface addressInterface(addressPins);
+    array<int, 6> colorPins1 = {11, 27, 7, 8, 9, 10};
+    array<int, 6> colorPins2 = {12, 5, 6, 19, 13, 20};
+    int clockPin = 17;
+    ColorInterface colorInterface(colorPins1, colorPins2, clockPin);
+
+    array<int, 5> addressPins1 = {22, 23, 24, 25, 15};
+    array<int, 5> addressPins2 = {3, 2, 26, 21, 14};
+    AddressInterface addressInterface1(addressPins1);
+    AddressInterface addressInterface2(addressPins2);
 
     int latchPin = 4;
     int oePin = 18;
@@ -43,6 +47,7 @@ int main() {
 
     //wait for speed regulator
     while (shmPointer->nextFrameDuration == 0) {}
+
     int64_t lastFrameStart = 0;
     while (true) {
 
@@ -72,13 +77,17 @@ int main() {
             // printf("waiting until: %lld ms\n", chrono::time_point_cast<chrono::milliseconds>(targetSliceEndTime).time_since_epoch().count());
 
             auto index1 = 31-static_cast<int> (slice.index1);
+            auto index2 = 31-static_cast<int> (slice.index2);
+
             //printf("\nindex: %d\n", index1);
-            addressInterface.setAddress(index1);
+            addressInterface1.setAddress(index1);
+            addressInterface2.setAddress(index2);
+
             for(int i = 0; i < 64; i++) {
                 // if (slice.data[i] != 0) {
                 //     printf("%d ", slice.data[i]);
                 // }
-                colorGroup.pushColor(slice.data[64+i], slice.data[64+i]);
+                colorInterface.pushColor(slice.data[0+i], slice.data[32+i], slice.data[64+i], slice.data[92+i]);
             }
             outputInterface.showUntil(targetSliceEndTime);
             // usleep(10000);
