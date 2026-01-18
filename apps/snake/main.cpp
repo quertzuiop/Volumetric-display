@@ -7,7 +7,7 @@ const int cellCountZ = 8;
 const int cellCountXY = floor(cellCountZ * maxSizeFactorXY);
 const float cellSize = height/cellCountZ;
 
-Vec3 getPosOfCell(int x, int y, int z) {
+Vec3<float> getPosOfCell(int x, int y, int z) {
     if (x >= cellCountXY or y >= cellCountXY or z >= cellCountZ) {
         printf("(%d, %d, %d)\n", x, y, z);
         throw invalid_argument("out of bounds");

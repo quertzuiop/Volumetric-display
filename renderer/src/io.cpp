@@ -97,8 +97,8 @@ void writeRenderToFile(const Render& render, const string& path) {
 
     auto in = [] (bool c) { return c ? 255 : 0; };
     for (const RenderedPoint& pt : render) {
-        const Vec3& pos = pt.pos;
-        const Vec3& norm = pt.normal;
+        const Vec3<float>& pos = pt.pos;
+        const Vec3<float>& norm = pt.normal;
         Color1b color = pt.color;
         RenderFile << pos.x << " " << pos.y << " " << pos.z
             << " " << norm.x << " " << norm.y << " " << norm.z 
@@ -107,11 +107,11 @@ void writeRenderToFile(const Render& render, const string& path) {
     }
 }
 
-vector<Vec3> loadPointsObj(string path) {
+vector<Vec3<float>> loadPointsObj(string path) {
     ifstream file(path);
     string str;
     string file_contents;
-    vector<Vec3> vertices;
+    vector<Vec3<float>> vertices;
 
     while (getline(file, str)) {
         if (str.find("v ") != string::npos) {
@@ -130,7 +130,7 @@ Mesh loadMeshObj(string path) {
     string str;
     string file_contents;
     Mesh res;
-    vector<Vec3>& vertices = res.vertices;
+    vector<Vec3<float>>& vertices = res.vertices;
     vector<pair<int, int>>& edges = res.edges;
     vector<array<int, 3>>& faces = res.faces;
     

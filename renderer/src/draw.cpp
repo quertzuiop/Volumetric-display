@@ -88,7 +88,7 @@ void Scene::drawCapsule(
     float length2 = length * length;
     float radius2 = radius * radius;
 
-    Vec3 vec = end - start;
+    auto vec = end - start;
 
     auto [minV, maxV] = arrangeBoundingBox(start, end);
     
@@ -99,9 +99,9 @@ void Scene::drawCapsule(
         if (it == mapping.end()) return;
         const UpdatePattern& bucket = it->second;
         for (const UpdatePatternPoint& pt : bucket) {
-            const Vec3& ptCoords = pt.pos;
-            Vec3 v1 = ptCoords-start;
-            Vec3 v2 = ptCoords-end;
+            const Vec3<float>& ptCoords = pt.pos;
+            auto v1 = ptCoords-start;
+            auto v2 = ptCoords-end;
             // float d12 = dist(ptCoords, start);
             // float d22 = dist(ptCoords, end);
             
@@ -137,12 +137,12 @@ void Scene::drawTriangle(
     auto& v3 = geometry.v3;
     auto thickness = geometry.thickness;
 
-    Vec3 minV = {
+    Vec3<float> minV = {
         min(min(v1.x, v2.x), v3.x),
         min(min(v1.y, v2.y), v3.y),
         min(min(v1.z, v2.z), v3.z),
     };
-    Vec3 maxV = {
+    Vec3<float> maxV = {
         max(max(v1.x, v2.x), v3.x),
         max(max(v1.y, v2.y), v3.y),
         max(max(v1.z, v2.z), v3.z),
@@ -173,7 +173,7 @@ void Scene::drawTriangle(
         const UpdatePattern& bucket = it->second;
 
         for (const UpdatePatternPoint& pt : bucket) {
-            const Vec3& ptCoords = pt.pos;
+            const auto& ptCoords = pt.pos;
 
             Vec3 p1 = ptCoords - v1;
             Vec3 p2 = ptCoords - v2;
@@ -222,7 +222,7 @@ void Scene::drawSphere (
         const UpdatePattern& bucket = it->second;
 
         for (const UpdatePatternPoint& pt : bucket) {
-            const Vec3& ptCoords = pt.pos;
+            const auto& ptCoords = pt.pos;
             float d2 = dist2(ptCoords, pos);
             //printf("d2: %f, r2: %f\n");
             if (thickness > 0 && d2 < (2 * radius * thickness - radius2)) continue; // magic math supr
@@ -232,8 +232,8 @@ void Scene::drawSphere (
 }
 
 void drawCuboidFull(
-    Vec3 minV,
-    Vec3 maxV,
+    Vec3<float> minV,
+    Vec3<float> maxV,
     float thickness,
     const GridParams& params,
     const unordered_map<int, UpdatePattern>& mapping,
@@ -246,8 +246,8 @@ void drawCuboidFull(
 }
 
 void drawCuboidWireframe(
-    Vec3 minV,
-    Vec3 maxV,
+    Vec3<float> minV,
+    Vec3<float> maxV,
     float thickness,
     const Color& color,
     ClippingBehavior clippingBehavior,
@@ -280,7 +280,7 @@ void Scene::drawCuboid(
             if (it == mapping.end()) continue;
             const UpdatePattern& bucket = it->second;
             for (const UpdatePatternPoint& pt : bucket) {
-                const Vec3& ptCoords = pt.pos;
+                const auto& ptCoords = pt.pos;
                 if (thickness > 0 &&
                     minV.x + thickness < ptCoords.x &&
                     minV.y + thickness < ptCoords.y &&

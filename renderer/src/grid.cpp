@@ -13,9 +13,9 @@ inline int packIndex(int ix, int iy, int iz) {
 inline array<int, 3> unpackIndex(int packed) {
     return { packed >> 22, (packed >> 11) & ((1 << 11) - 1), packed & ((1 << 11) - 1) };
 }
-int calculateIndex(const GridParams& params, const Vec3& ptCoords) {
-    const Vec3& min = params.boundingBoxMin;
-    const Vec3& cellSizes = params.cellSizes;
+int calculateIndex(const GridParams& params, const Vec3<float>& ptCoords) {
+    const Vec3<float>& min = params.boundingBoxMin;
+    const Vec3<float>& cellSizes = params.cellSizes;
 
     int bitMax = pow(2, 10);
 
@@ -27,11 +27,11 @@ int calculateIndex(const GridParams& params, const Vec3& ptCoords) {
     return packIndex(ix, iy, iz);
 
 }
-vector<int> calculateIndicesFromBB(const GridParams& params, const Vec3& min, const Vec3& max, float padding = 0.) {
-    const Vec3& boxMin = params.boundingBoxMin;
-    const Vec3& boxMax = params.boundingBoxMax;
+vector<int> calculateIndicesFromBB(const GridParams& params, const Vec3<float>& min, const Vec3<float>& max, float padding = 0.) {
+    const Vec3<float>& boxMin = params.boundingBoxMin;
+    const Vec3<float>& boxMax = params.boundingBoxMax;
 
-    const Vec3& cellSizes = params.cellSizes;
+    const Vec3<float>& cellSizes = params.cellSizes;
 
     int minIx = floor((min.x - boxMin.x - padding) / cellSizes.x);
     int minIy = floor((min.y - boxMin.y - padding) / cellSizes.y);
@@ -59,11 +59,11 @@ tuple<unordered_map<int, UpdatePattern>, GridParams> buildGrid(const UpdatePatte
     int gridSize = ceil(pow(nCells, 1. / 3.));
 
     //find bounding box
-    Vec3 Min = { 0, 0, 0 };
-    Vec3 Max = { 0, 0, 0 };
+    Vec3<float> Min = { 0, 0, 0 };
+    Vec3<float> Max = { 0, 0, 0 };
 
     for (const UpdatePatternPoint& pt : points) {
-        Vec3 ptCoords = pt.pos;
+        auto ptCoords = pt.pos;
         Min.x = min(Min.x, ptCoords.x);
         Min.y = min(Min.y, ptCoords.y);
         Min.z = min(Min.z, ptCoords.z);

@@ -17,7 +17,7 @@ void writePtcloudToFile(const ptCloud& points, const string& path);
 
 void writeRenderToFile(const Render& render, const string& path);
 
-vector<Vec3> loadPointsObj(string path);
+vector<Vec3<float>> loadPointsObj(string path);
 
 Mesh loadMeshObj(string path);
 

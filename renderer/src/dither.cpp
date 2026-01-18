@@ -148,7 +148,7 @@ Color1b dither(Color color, float ditherRank) {
     bool b = powf(color.b, 1.5) > fmod(ditherRank + 0.666, 1.);
     return {r, g, b};
 }
-Color1b dither(Color color, Vec3 pos) {
+Color1b dither(Color color, Vec3<float> pos) {
     int ix = floor(pos.x)+35; //avoid negative index modulo error
     int iy = floor(pos.y)+35; //avoid negative index modulo error
     int iz = floor(pos.z)+1;

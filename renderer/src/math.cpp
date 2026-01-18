@@ -1,6 +1,7 @@
 #include"types.h"
 
-std::tuple<Vec3, Vec3> arrangeBoundingBox(const Vec3& p1, const Vec3& p2) {
+template<typename T>
+std::tuple<Vec3<T>, Vec3<T>> arrangeBoundingBox(const Vec3<T>& p1, const Vec3<T>& p2) {
     return { {
         std::min(p1.x, p2.x),
         std::min(p1.y, p2.y),

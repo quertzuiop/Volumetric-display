@@ -11,39 +11,39 @@
 using namespace std;
 
 struct Transformation {
-    Vec3 translation = {0, 0, 0};
-    Vec3 rotation = {0, 0, 0};
-    Vec3 scale = {1, 1, 1};
-    Vec3 pivot = { 0, 0, 0 };
+    Vec3<float> translation = {0, 0, 0};
+    Vec3<float> rotation = {0, 0, 0};
+    Vec3<float> scale = {1, 1, 1};
+    Vec3<float> pivot = { 0, 0, 0 };
     Mat4 getMatrix() const;
 };
 
 struct ParticleGeometry {
-    Vec3 pos;
+    Vec3<float> pos;
     float radius;
 };
 struct CapsuleGeometry {
-    Vec3 start;
-    Vec3 end;
+    Vec3<float> start;
+    Vec3<float> end;
     float radius;
 };
 
 struct TriangleGeometry {
-    Vec3 v1;
-    Vec3 v2;
-    Vec3 v3;
+    Vec3<float> v1;
+    Vec3<float> v2;
+    Vec3<float> v3;
     float thickness;
 };
 
 struct SphereGeometry {
-    Vec3 pos;
+    Vec3<float> pos;
     float radius;
     float thickness = 0.;
 };
 
 struct CuboidGeometry {
-    Vec3 v1;
-    Vec3 v2;
+    Vec3<float> v1;
+    Vec3<float> v2;
     float thickness = 0.;
     bool isWireframe = false;
 };
@@ -72,10 +72,10 @@ class Object {
         Geometry getTransformedGeometry();
         void setGeometry(Geometry newGeometry);
         void setColor(Color newColor);
-        void translate(Vec3 translation);
-        void rotate(Vec3 newRotation);
-        void scale(Vec3 newScale);
-        void setPivot(Vec3 newPivot);
+        void translate(Vec3<float> translation);
+        void rotate(Vec3<float> newRotation);
+        void scale(Vec3<float> newScale);
+        void setPivot(Vec3<float> newPivot);
 
         Object(ObjectId initId, Geometry initGeometry, Color initColor, ClippingBehavior initClippingBehavior);
     private:
@@ -96,10 +96,10 @@ class Scene {
         void render(bool writeToFile = false);
         void setObjectGeometry(ObjectId id, Geometry newGeometry);
         void setObjectColor(ObjectId id, Color newColor);
-        void setObjectTranslation(ObjectId id, Vec3 newTranslation);
-        void setObjectRotation(ObjectId id, Vec3 newRotation);
-        void setObjectScale(ObjectId id, Vec3 newScale);
-        void setObjectIntrinsicPivot(ObjectId id, Vec3 newPivot);
+        void setObjectTranslation(ObjectId id, Vec3<float> newTranslation);
+        void setObjectRotation(ObjectId id, Vec3<float> newRotation);
+        void setObjectScale(ObjectId id, Vec3<float> newScale);
+        void setObjectIntrinsicPivot(ObjectId id, Vec3<float> newPivot);
 
     Scene();
     private:

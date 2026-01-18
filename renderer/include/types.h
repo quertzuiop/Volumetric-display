@@ -4,10 +4,11 @@
 #include<array>
 #include<stdint.h>
 
+template<typename T>
 struct Vec3 {
-    float x;
-    float y;
-    float z;
+    T x;
+    T y;
+    T z;
 };
 
 using Mat4 = std::array<std::array<float, 4>, 4>;
@@ -62,13 +63,13 @@ enum ClippingBehavior {
 //};
 
 struct GridParams {
-    Vec3 boundingBoxMin;
-    Vec3 boundingBoxMax;
+    Vec3<float> boundingBoxMin;
+    Vec3<float> boundingBoxMax;
     int gridSize;
-    Vec3 cellSizes;
+    Vec3<float> cellSizes;
 };
 
-using Point = std::pair<Vec3, Vec3>;
+using Point = std::pair<Vec3<float>, Vec3<float>>;
 using ptCloud = std::vector<Point>;
 
 using ObjectId = uint32_t; //::MAX is reserved for negative points
@@ -84,16 +85,16 @@ struct PointDisplayParams {
 struct RenderedPoint {
     ObjectId objectId;
     PointDisplayParams pointDisplayParams;
-    Vec3 pos;
-    Vec3 normal;
+    Vec3<float> pos;
+    Vec3<float> normal;
     Color1b color;
     ClippingBehavior clippingBehavior;
 };
 
 struct UpdatePatternPoint {
     PointDisplayParams pointDisplayParams;
-    Vec3 pos;
-    Vec3 normal;
+    Vec3<float> pos;
+    Vec3<float> normal;
     float ditherRank;
 };
 
@@ -102,7 +103,7 @@ using UpdatePattern = std::vector<UpdatePatternPoint>;
 
 
 struct Mesh {
-    std::vector<Vec3> vertices;
+    std::vector<Vec3<float>> vertices;
     std::vector<std::pair<int, int>> edges;
     std::vector<std::array<int, 3>> faces;
 };

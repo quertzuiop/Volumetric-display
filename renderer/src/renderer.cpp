@@ -67,7 +67,7 @@ Object::Object(ObjectId initId, Geometry initGeometry, Color initColor, Clipping
 
 Geometry Object::getTransformedGeometry() {
     Mat4 tMatrix = transformation.getMatrix();
-    const Vec3& pivot = transformation.pivot;
+    const Vec3<float>& pivot = transformation.pivot;
     float maxScale = max(max(transformation.scale.x, transformation.scale.y), transformation.scale.z);
     Geometry res;
     visit([&](auto&& arg)
@@ -123,19 +123,19 @@ void Object::setColor(Color newColor) {
     color = newColor;
     toRerender = true;
 }
-void Object::translate(Vec3 translation) {
+void Object::translate(Vec3<float> translation) {
     transformation.translation = translation;
     toRerender = true;
 }
-void Object::rotate(Vec3 rotation) {
+void Object::rotate(Vec3<float> rotation) {
     transformation.rotation = rotation;
     toRerender = true;
 }
-void Object::scale(Vec3 factors) {
+void Object::scale(Vec3<float> factors) {
     transformation.scale = factors;
     toRerender = true;
 }
-void Object::setPivot(Vec3 pivot) {
+void Object::setPivot(Vec3<float> pivot) {
     transformation.pivot = pivot;
     toRerender = true;
 }
@@ -180,19 +180,19 @@ Object& Scene::getObject(ObjectId id) {
     throw invalid_argument("No object found with this id.");
     cerr<<"No object found"<<endl;
 }
-void Scene::setObjectTranslation(ObjectId id, Vec3 translation) {
+void Scene::setObjectTranslation(ObjectId id, Vec3<float> translation) {
     auto& object = getObject(id);
     object.translate(translation);
 }
-void Scene::setObjectScale(ObjectId id, Vec3 factors) {
+void Scene::setObjectScale(ObjectId id, Vec3<float> factors) {
     auto& object = getObject(id);
     object.scale(factors);
 }
-void Scene::setObjectRotation(ObjectId id, Vec3 rotation) {
+void Scene::setObjectRotation(ObjectId id, Vec3<float> rotation) {
     auto& object = getObject(id);
     object.rotate(rotation);
 }
-void Scene::setObjectIntrinsicPivot(ObjectId id, Vec3 newPivot) {
+void Scene::setObjectIntrinsicPivot(ObjectId id, Vec3<float> newPivot) {
     auto& object = getObject(id);
     object.setPivot(newPivot);
 }
