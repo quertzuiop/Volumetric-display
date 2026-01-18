@@ -1,22 +1,25 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <chrono>
 
 #ifndef DISPLAY_CONTROL_H
 #define DISPLAY_CONTROL_H
-class ColorGroupInterface {
+
+class ColorInterface {
     public:
-        int pinNums[6];
+        std::array<int, 6> pinNums1;
+        std::array<int, 6> pinNums2;
         int clockPinNum;
-        void pushColor(int c1, int c2);
-    ColorGroupInterface (int ColorPins[6], int clockPin);
+        void pushColor(int c11, int c12, int c21, int c22);
+    ColorInterface (std::array<int, 6> ColorPins1, std::array<int, 6> ColorPins2, int clockPin);
 };
 class AddressInterface {
     public:
-        int addressPins[5];
+        std::array<int, 5> addressPins;
         void setAddress(int address);
-    AddressInterface(int pins[5]);
+    AddressInterface(std::array<int, 5> pins);
 };
 class OutputInterface {
     public:

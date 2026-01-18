@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+#include <array>
 #include "displayControl.h"
 
 using namespace std;
@@ -42,11 +43,6 @@ const int addressPins[] = {22, 23, 24, 25, 15};
 list<int> initializedPins;
 
 void setAddress(int address) { 
-    /*
-
-    TODO: try to write whole address to one variable then set whole register to value 
-    
-    */
     for (int i = 0; i < 5; i++) {
         if ((address>>i)%2==1) { //get nth bit of address
             tiny_wait(10);
@@ -98,20 +94,22 @@ void tiny_wait(int n) {
     }
 }
 
-ColorGroupInterface::ColorGroupInterface (int colorPins[6], int clockPin) {
+ColorInterface::ColorInterface (array<int, 6> colorPins1, array<int, 6> colorPins2, int clockPin) {
     for (int i = 0; i < 6; i++) {
-        pinNums[i] = colorPins[i];
+        pinNums1[i] = colorPins1[i];
+        pinNums2[i] = colorPins2[i];
+        pinInit(colorPins1[i]);
+        pinInit(colorPins2[i]);
     }
     clockPinNum=clockPin;
-    for (int pin: pinNums) {
-        pinInit(pin);
-    }
     pinInit(clockPinNum);
 }
 
-void ColorGroupInterface::pushColor(int c1, int c2) {
-    int regVal = ((c1>>2 & 1)<<pinNums[0]) | ((c1>>1 & 1)<<pinNums[1]) | ((c1 & 1)<<pinNums[2])
-                | ((c2>>2 & 1)<<pinNums[3]) | ((c2>>1 & 1)<<pinNums[4]) | ((c2 & 1)<<pinNums[5]);
+void ColorInterface::pushColor(int c11, int c12, int c21, int c22) {
+    int regVal = ((c11>>2 & 1)<<pinNums1[0]) | ((c11>>1 & 1)<<pinNums1[1]) | ((c11 & 1)<<pinNums1[2])
+                |((c12>>2 & 1)<<pinNums1[3]) | ((c12>>1 & 1)<<pinNums1[4]) | ((c12 & 1)<<pinNums1[5])
+                |((c21>>2 & 1)<<pinNums2[0]) | ((c21>>1 & 1)<<pinNums2[1]) | ((c21 & 1)<<pinNums2[2])
+                |((c22>>2 & 1)<<pinNums2[3]) | ((c22>>1 & 1)<<pinNums2[4]) | ((c22 & 1)<<pinNums2[5]);
     GPIO_SET = regVal;
     GPIO_SET = (1<<clockPinNum);
     tiny_wait(25); //adjust this for less flicker but less brightness
@@ -119,23 +117,25 @@ void ColorGroupInterface::pushColor(int c1, int c2) {
     tiny_wait(5);
 }
 
-AddressInterface::AddressInterface(int pins[5]) {
+AddressInterface::AddressInterface(array<int, 5> pins) {
     for (int i = 0; i < 5; i++) {
         addressPins[i] = pins[i];
         pinInit(addressPins[i]);
     }
 }
 void AddressInterface::setAddress(int address) {
-    
+    uint8_t set;
+    uint8_t clear;
     for (int i = 0; i < 5; i++) {
         // tiny_wait(5000);
         if ((address>>i)%2==1) { //get nth bit
-            GPIO_SET = (1<<addressPins[i]);
-        }
-        else {
-            GPIO_CLR = (1<<addressPins[i]);
+            set |= (1<<addressPins[i]);
+        } else {
+            clear |= (1<<addressPins[i]);
         }
     }
+    GPIO_SET = set;
+    GPIO_CLR = clear;
 }
 
 OutputInterface::OutputInterface(int latchPin_, int oePin_) {

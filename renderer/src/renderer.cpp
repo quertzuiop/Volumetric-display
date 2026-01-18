@@ -148,6 +148,11 @@ Scene::Scene() {
     lastId = 0;
 
     shmPointer = openShm("vdshm");
+    if (shmPointer == nullptr) { 
+        printf("SHM failed to open");
+        return; 
+    }
+
     for (auto& slice : shmPointer->data) {
         for (auto& voxel : slice.data) {
             voxel = 0;

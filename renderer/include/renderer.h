@@ -45,6 +45,7 @@ struct CuboidGeometry {
     Vec3 v1;
     Vec3 v2;
     float thickness = 0.;
+    bool isWireframe = false;
 };
 
 struct MeshGeometry {

@@ -231,6 +231,31 @@ void Scene::drawSphere (
     }
 }
 
+void drawCuboidFull(
+    Vec3 minV,
+    Vec3 maxV,
+    float thickness,
+    const GridParams& params,
+    const unordered_map<int, UpdatePattern>& mapping,
+    const Color& color,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
+) {
+    
+}
+
+void drawCuboidWireframe(
+    Vec3 minV,
+    Vec3 maxV,
+    float thickness,
+    const Color& color,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
+) {
+    
+}
 
 void Scene::drawCuboid(
     const CuboidGeometry& geometry,
@@ -247,35 +272,57 @@ void Scene::drawCuboid(
     auto [minV, maxV] = arrangeBoundingBox(v1, v2);
     printf("params: %f %f %d\n", params.boundingBoxMax.x, params.cellSizes.x, params.gridSize);
 
-    auto bucketIndices = calculateIndicesFromBB(params, minV, maxV);
-    printf("got %d bucket indices\n", bucketIndices.size());
-    for (int bucketIndex : bucketIndices) {
-        auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) continue;
-        const UpdatePattern& bucket = it->second;
-        for (const UpdatePatternPoint& pt : bucket) {
-            const Vec3& ptCoords = pt.pos;
-            if (thickness > 0 &&
-                minV.x + thickness < ptCoords.x &&
-                minV.y + thickness < ptCoords.y &&
-                minV.z + thickness < ptCoords.z &&
-                maxV.x - thickness > ptCoords.x &&
-                maxV.y - thickness > ptCoords.y &&
-                maxV.z - thickness > ptCoords.z)continue;
+    if (not geometry.isWireframe) {
+        auto bucketIndices = calculateIndicesFromBB(params, minV, maxV);
+        printf("got %d bucket indices\n", bucketIndices.size());
+        for (int bucketIndex : bucketIndices) {
+            auto it = mapping.find(bucketIndex);
+            if (it == mapping.end()) continue;
+            const UpdatePattern& bucket = it->second;
+            for (const UpdatePatternPoint& pt : bucket) {
+                const Vec3& ptCoords = pt.pos;
+                if (thickness > 0 &&
+                    minV.x + thickness < ptCoords.x &&
+                    minV.y + thickness < ptCoords.y &&
+                    minV.z + thickness < ptCoords.z &&
+                    maxV.x - thickness > ptCoords.x &&
+                    maxV.y - thickness > ptCoords.y &&
+                    maxV.z - thickness > ptCoords.z)continue;
 
-            if (minV.x < ptCoords.x &&
-                minV.y < ptCoords.y &&
-                minV.z < ptCoords.z &&
-                maxV.x > ptCoords.x &&
-                maxV.y > ptCoords.y &&
-                maxV.z > ptCoords.z){
+                if (minV.x < ptCoords.x &&
+                    minV.y < ptCoords.y &&
+                    minV.z < ptCoords.z &&
+                    maxV.x > ptCoords.x &&
+                    maxV.y > ptCoords.y &&
+                    maxV.z > ptCoords.z){
                     render.push_back({ objectId, pt.pointDisplayParams, ptCoords, pt.normal, dither(color, ptCoords), clippingBehavior });;
                 }
-                    
+            }
+        }
+    } else {
+        //draw only edges, not diagonals
+        for (uint combinedCoord1 = 0; combinedCoord1 < 2*2*2; combinedCoord1++) {            
+            Vec3 p1 = {
+                (combinedCoord1 & 1) ? minV.x : maxV.x,
+                (combinedCoord1 & 2) ? minV.y : maxV.y,
+                (combinedCoord1 & 4) ? minV.z : maxV.z
+            };
+            for (uint shift : array<uint, 3> {1, 2, 4}) {
+                if (combinedCoord1 & shift != 0) { continue; } // new combined would be outside cube / break due to carry
+                uint combinedCoord2 = combinedCoord1 + shift;
+
+                Vec3 p2 = {
+                    (combinedCoord2 & 1) ? minV.x : maxV.x, 
+                    (combinedCoord2 & 2) ? minV.y : maxV.y, 
+                    (combinedCoord2 & 4) ? minV.z : maxV.z
+                }; 
+                drawCapsule({p1, p2, thickness}, color, clippingBehavior, objectId, render);
+            }
         }
     }
     cout<<render.size()<<endl;
 }
+
 
 void Scene::drawMesh(
     const MeshGeometry& geometry,
