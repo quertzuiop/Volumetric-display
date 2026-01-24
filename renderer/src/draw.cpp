@@ -96,7 +96,7 @@ void Scene::drawCapsule(
 
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) return;
+        if (it == mapping.end()) continue;
         const UpdatePattern& bucket = it->second;
         for (const UpdatePatternPoint& pt : bucket) {
             const Vec3<float>& ptCoords = pt.pos;
@@ -169,7 +169,7 @@ void Scene::drawTriangle(
 
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) return;
+        if (it == mapping.end()) continue;
         const UpdatePattern& bucket = it->second;
 
         for (const UpdatePatternPoint& pt : bucket) {
@@ -218,7 +218,7 @@ void Scene::drawSphere (
 
     for (int bucketIndex : bucketIndices) {
         auto it = mapping.find(bucketIndex);
-        if (it == mapping.end()) return;
+        if (it == mapping.end()) continue;
         const UpdatePattern& bucket = it->second;
 
         for (const UpdatePatternPoint& pt : bucket) {
@@ -231,32 +231,6 @@ void Scene::drawSphere (
     }
 }
 
-void drawCuboidFull(
-    Vec3<float> minV,
-    Vec3<float> maxV,
-    float thickness,
-    const GridParams& params,
-    const unordered_map<int, UpdatePattern>& mapping,
-    const Color& color,
-    ClippingBehavior clippingBehavior,
-    ObjectId objectId,
-    Render& render
-) {
-    
-}
-
-void drawCuboidWireframe(
-    Vec3<float> minV,
-    Vec3<float> maxV,
-    float thickness,
-    const Color& color,
-    ClippingBehavior clippingBehavior,
-    ObjectId objectId,
-    Render& render
-) {
-    
-}
-
 void Scene::drawCuboid(
     const CuboidGeometry& geometry,
     const Color& color,
@@ -265,6 +239,7 @@ void Scene::drawCuboid(
     Render& render
 ) {
     cout<<"drawing cuboid"<<endl;
+    printf("wireframe: %d\n", geometry.isWireframe);
     auto& v1 = geometry.v1;
     auto& v2 = geometry.v2;
     auto thickness = geometry.thickness;
@@ -308,7 +283,7 @@ void Scene::drawCuboid(
                 (combinedCoord1 & 4) ? minV.z : maxV.z
             };
             for (uint shift : array<uint, 3> {1, 2, 4}) {
-                if (combinedCoord1 & shift != 0) { continue; } // new combined would be outside cube / break due to carry
+                if ((combinedCoord1 & shift) != 0) { continue; } // new combined would be outside cube / break due to carry
                 uint combinedCoord2 = combinedCoord1 + shift;
 
                 Vec3 p2 = {

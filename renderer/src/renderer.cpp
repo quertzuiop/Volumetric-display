@@ -54,7 +54,7 @@ Mat4 Transformation::getMatrix() const {
     matrix[0][3] = translation.x;
     matrix[1][3] = translation.y;
     matrix[2][3] = translation.z;
-    printf("new translation x in getMatrix(): %f\n", translation.x);
+    // printf("new translation x in getMatrix(): %f\n", translation.x);
     return matrix;
 }
 
@@ -100,7 +100,8 @@ Geometry Object::getTransformedGeometry() {
         res = CuboidGeometry{
             .v1 = pivot + matColMul(tMatrix, arg.v1 - pivot),
             .v2 = pivot + matColMul(tMatrix, arg.v2 - pivot),
-            .thickness = arg.thickness * maxScale
+            .thickness = arg.thickness * maxScale,
+            .isWireframe = arg.isWireframe
         };
         else if constexpr (std::is_same_v<T, MeshGeometry>) 
         res = MeshGeometry{
@@ -180,22 +181,31 @@ Object& Scene::getObject(ObjectId id) {
     throw invalid_argument("No object found with this id.");
     cerr<<"No object found"<<endl;
 }
+void Scene::setObjectGeometry(ObjectId id, Geometry newGeometry) {
+    auto& object = getObject(id);
+    object.setGeometry(newGeometry);
+}
+
 void Scene::setObjectTranslation(ObjectId id, Vec3<float> translation) {
     auto& object = getObject(id);
     object.translate(translation);
 }
+
 void Scene::setObjectScale(ObjectId id, Vec3<float> factors) {
     auto& object = getObject(id);
     object.scale(factors);
 }
+
 void Scene::setObjectRotation(ObjectId id, Vec3<float> rotation) {
     auto& object = getObject(id);
     object.rotate(rotation);
 }
+
 void Scene::setObjectIntrinsicPivot(ObjectId id, Vec3<float> newPivot) {
     auto& object = getObject(id);
     object.setPivot(newPivot);
 }
+
 void Scene::render(bool writeToFile) {
     printf("rendering %d objects\n", objects.size());
     Render render;

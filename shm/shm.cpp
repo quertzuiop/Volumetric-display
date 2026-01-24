@@ -40,7 +40,7 @@ ShmLayout* openShm(const char* name) {
         if (errno == ENOENT) {
             cerr << "Driver not running (SHM not found)." << endl;
         } else {
-            perror("openShm: shm_open failed");
+            perror("openShm: shm_open failed\n");
         }
         return nullptr;
     }

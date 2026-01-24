@@ -1,18 +1,5 @@
 #include"types.h"
 
-template<typename T>
-std::tuple<Vec3<T>, Vec3<T>> arrangeBoundingBox(const Vec3<T>& p1, const Vec3<T>& p2) {
-    return { {
-        std::min(p1.x, p2.x),
-        std::min(p1.y, p2.y),
-        std::min(p1.z, p2.z),
-    }, {
-        std::max(p1.x, p2.x),
-        std::max(p1.y, p2.y),
-        std::max(p1.z, p2.z),
-    } };
-}
-
 Mat4 matMul(const Mat4& mat1, const Mat4& mat2) {
     Mat4 res;
     for (int i = 0; i < 4; i++) {

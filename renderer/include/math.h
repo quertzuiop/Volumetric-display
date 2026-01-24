@@ -1,6 +1,8 @@
 #pragma once
 #include"types.h"
 #include <cmath>
+#include <algorithm>
+#include <tuple>
 
 template<typename T>
 inline Vec3<T> operator-(const Vec3<T>& a, const Vec3<T>& b) {
@@ -8,6 +10,10 @@ inline Vec3<T> operator-(const Vec3<T>& a, const Vec3<T>& b) {
 }
 template<typename T>
 inline Vec3<T> operator+(const Vec3<T>& a, const Vec3<T>& b) {
+    return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+template<typename A, typename B>
+inline Vec3<A> operator+(const Vec3<A>& a, const Vec3<B>& b) {
     return { a.x + b.x, a.y + b.y, a.z + b.z };
 }
 template<typename T>
@@ -73,4 +79,14 @@ inline void scale(Vec3<float>& pt, float factor, const Vec3<float>& hinge) {
     pt.z = (relativeZ * factor) + hinge.z;
 }
 template<typename T>
-std::tuple<Vec3<T>, Vec3<T>> arrangeBoundingBox(const Vec3<T>& p1, const Vec3<T>& p2);
+std::tuple<Vec3<T>, Vec3<T>> arrangeBoundingBox(const Vec3<T>& p1, const Vec3<T>& p2) {
+    return { {
+        std::min(p1.x, p2.x),
+        std::min(p1.y, p2.y),
+        std::min(p1.z, p2.z),
+    }, {
+        std::max(p1.x, p2.x),
+        std::max(p1.y, p2.y),
+        std::max(p1.z, p2.z),
+    } };
+}

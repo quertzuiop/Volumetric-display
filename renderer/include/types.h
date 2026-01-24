@@ -3,6 +3,7 @@
 #include<unordered_map>
 #include<array>
 #include<stdint.h>
+#include<ostream>
 
 template<typename T>
 struct Vec3 {
@@ -10,6 +11,11 @@ struct Vec3 {
     T y;
     T z;
 };
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const Vec3<T>& v) {
+    return os << v.x << ", " << v.y << ", " << v.z;
+}
 
 using Mat4 = std::array<std::array<float, 4>, 4>;
 
