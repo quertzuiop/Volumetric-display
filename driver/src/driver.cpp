@@ -20,12 +20,13 @@ concept optionType = same_as<T, int> ||
 
 //passing bool returns true if the flag is present, shouldnt have true or false after
 template<optionType T>
-T getOption(char* argname, int argc, char* argv[]) {
-    int i =0;
+T getOption(string_view argname, int argc, char* argv[]) {
     for (int i = 0; i < argc - 1; i++) {
         if (argv[i] == argname) {
             if constexpr(same_as<T, int>) {
-                return atoi(argv[i+1]);
+                if (i + 1 < argc) {
+                    return atoi(argv[i+1]);
+                }
             } else if constexpr(same_as<T, bool>) {
                 return true;
             }
@@ -43,14 +44,15 @@ int main(int argc, char* argv[]) {
     int  fps = 0;
     try {
         fps = getOption<int>("-fps", argc, argv);
-    } catch (invalid_argument) {
         usePhotointerrupterFps = false;
+    } catch (invalid_argument& e) {
+        printf("fps value cannot be parsed\n");
     }
 
     if (usePhotointerrupterFps) {
-        printf("Using photinterrupter for fps");
+        printf("Using photinterrupter for fps\n");
     } else {
-        printf("Fps set to: %d", fps);
+        printf("Fps set to: %d\n", fps);
     }
 
     cpu_set_t cpus;

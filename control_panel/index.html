@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <p>ahoj</p>
+    </body>
+    <script>
+        let pressedKeys = [];
+
+        function sendKeys() {
+            fetch("/keystrokes/",
+                {
+                    method: "PUT",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({keys: pressedKeys})
+                }
+            ).then(function(response) {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            }).then(function(data) {
+                console.log(data);
+            }).catch(function(err) {
+                console.log('Fetch Error:', err);
+            });
+        }
+
+        window.onkeydown = function(e) {
+            let newKey = {
+                key_code: String.fromCharCode(e.keyCode),
+                timestamp: Date.now()
+            };
+            pressedKeys = pressedKeys.filter((key) => key.key_code != newKey.key_code)
+            
+            pressedKeys.push(newKey);
+            sendKeys();
+        }        
+    </script>
+</html>

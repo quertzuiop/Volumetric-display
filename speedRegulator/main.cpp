@@ -4,6 +4,7 @@
 
 using namespace std;
 const double targetFps = 24.;
+const int dataPin = 1;
 
 void waitForFall() {
     while (digitalRead(1) == HIGH) {}
@@ -12,7 +13,7 @@ void waitForFall() {
 int main() {
     volatile ShmLayout* shmPointer = openShm("vdshm");
     wiringPiSetupGpio();
-    pinMode(1, INPUT);
+    pinMode(dataPin, INPUT);
 
     int64_t lastFrameStart;
     int frameNum = 0;
@@ -27,18 +28,18 @@ int main() {
         }
         lastFrameStart = currentTime;
         while (true) {
-            while (digitalRead(1) == HIGH) {}
+            while (digitalRead(dataPin) == HIGH) {}
             int count = 0; 
-            while (digitalRead(1) == LOW && count < 100) {
+            while (digitalRead(dataPin) == LOW && count < 100) {
                 count++;
             }
             if (count == 100) { break; }
         }
 
         while (true) {
-            while (digitalRead(1) == LOW) {}
+            while (digitalRead(dataPin) == LOW) {}
             int count = 0; 
-            while (digitalRead(1) == HIGH && count < 100) {
+            while (digitalRead(dataPin) == HIGH && count < 100) {
                 count++;
             }
             if (count == 100) { break; }
