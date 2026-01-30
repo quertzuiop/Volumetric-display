@@ -142,18 +142,22 @@ void Object::setPivot(Vec3<float> pivot) {
 }
 
 Scene::Scene() {
+    cout<<"loading update pattern..."<<endl;
     UpdatePattern updatePattern = loadUpdatePattern("../../update_pattern_gen/output.txt");
+    cout<<"building grid..."<<endl;
     auto [mapping_, params_] = buildGrid(updatePattern, 20);
     mapping = mapping_;
     params = params_;
     lastId = 0;
+
+    cout<<"opening shm..."<<endl;
 
     shmPointer = openShm("vdshm");
     if (shmPointer == nullptr) { 
         printf("SHM failed to open");
         return; 
     }
-
+    cout<<"wiping voxel data..."<<endl;
     for (auto& slice : shmPointer->data) {
         for (auto& voxel : slice.data) {
             voxel = 0;
@@ -239,4 +243,16 @@ void Scene::render(bool writeToFile) {
             */
         }
     }
+}
+
+KeyboardState Scene::getPressedKeys() {
+    if (shmPointer == nullptr) {
+        cout<<"AAAAAAAAAAAA POINTER"<<endl;
+    }
+    printf("C++ Layout Size: %lu\n", sizeof(ShmLayout));
+    printf("Offset of keyboardState: %lu\n", offsetof(ShmLayout, keyboardState));
+    printf("Keyboard state size: %lu\n", sizeof(KeyboardState));
+    cout<<"getting pressed keys"<<endl;
+    return shmPointer->keyboardState;
+    cout<<"ahoj"<<endl;
 }

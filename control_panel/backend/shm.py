@@ -24,11 +24,12 @@ ShmVoxelFrame = ShmVoxelSlice * 2000
 
 class ShmLayout(ctypes.Structure):
     _fields_ = [
-        ("header", Header),                     # Offset 0
-        ("nextFrameStart", ctypes.c_int64),     # Offset 64
-        ("nextFrameDuration", ctypes.c_int64),  # Offset 72
-        ("keyboardState", ctypes.c_char * 8),   # Offset 80
-        ("data", ShmVoxelFrame)                 # Offset 88
+        ("header", Header),
+        ("nextFrameStart", ctypes.c_int64),
+        ("nextFrameDuration", ctypes.c_int64),
+        ("keyboardState", ctypes.c_uint8 * 8), #actually are chars, but i encountered some bugs
+        ("data", ShmVoxelFrame),
+        ("padding", ctypes.c_uint8 * 8)
     ]
     
 class Shm:
@@ -42,7 +43,7 @@ class Shm:
         try:
             self.shm = shared_memory.SharedMemory(name=self.name, create=True, size = self.size)
         
-        except FileExistsError:
+        except FileExistsError: # wipe old shm
             temp_shm = shared_memory.SharedMemory(name=self.name, create=False, size = self.size)
             temp_shm.unlink()
             temp_shm.close()
@@ -53,12 +54,28 @@ class Shm:
 
         self.layout.header.signature = SHM_SIGNATURE
         self.layout.header.version = SHM_VERSION
+        
     
     def write_keys(self, key_strokes):
+        print(f"Python Layout Size: {ctypes.sizeof(ShmLayout)}")
+        print(f"Offset of keyboardState: {ShmLayout.keyboardState.offset}")
+        print(f"Python keyboard state size: {ctypes.sizeof(ctypes.c_uint8 * 8)}")
+        
+        #Python Layout Size: 516088
+        #Offset of keyboardState: 80
+        if not self.layout:
+            print("layout is none")
+            return
+        raw_keys = (ctypes.c_uint8*8)()
         ctypes.memset(ctypes.addressof(self.layout.keyboardState), 0, 8)
         for i, key in enumerate(key_strokes[:8]):
-            if key.key_code < 0: continue
-            self.layout.keyboardState[i] = key.key_code
+            if len(key.key_code) > 1: continue
+            print(type(key.key_code))
+            raw_keys[i] = ord(key.key_code) #ignore timestamp for now
+        self.layout.keyboardState = raw_keys
+        
+        for k in self.layout.keyboardState:
+            print(chr(k))
     
     def close(self):
         if self.shm == None:

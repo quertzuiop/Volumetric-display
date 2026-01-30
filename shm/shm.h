@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <chrono>
+#include "../renderer/include/types.h"
 
 using namespace std;
 /*
@@ -29,7 +30,6 @@ struct ShmVoxelSlice {
 };
 
 using ShmVoxelFrame = array<ShmVoxelSlice, 2000>;
-using KeyboardState = array<char, 8>;
 
 struct alignas(64) Header {
     uint32_t signature; //4
@@ -47,7 +47,6 @@ struct ShmLayout {
 
 ShmLayout* initShm(const Header header, const char* name); //reader opens shm first, sets header, returns base ptr
 ShmLayout* openShm(const char* name); //writer opens shm and returns base ptr
-
 
 ShmLayout& readShm(const ShmLayout* basePtr);
 void writeShm(ShmLayout* basePtr, const ShmVoxelFrame& shmVoxelFrame);

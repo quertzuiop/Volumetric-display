@@ -94,6 +94,9 @@ class Scene {
         ObjectId createObject(const Geometry& initGeometry, const Color& initColor, ClippingBehavior initClippingBehavior=ADD);
         Object& getObject(ObjectId);
         void render(bool writeToFile = false);
+
+        KeyboardState getPressedKeys();
+
         void setObjectGeometry(ObjectId id, Geometry newGeometry);
         void setObjectColor(ObjectId id, Color newColor);
         void setObjectTranslation(ObjectId id, Vec3<float> newTranslation);

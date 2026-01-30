@@ -82,7 +82,9 @@ int main(int argc, char* argv[]) {
         .signature = 0xB0B,
         .version = 1
     };
-    volatile ShmLayout *shmPointer = initShm(header, "vdshm");
+    //volatile ShmLayout *shmPointer = initShm(header, "vdshm");
+    volatile ShmLayout *shmPointer = openShm("vdshm");
+
     volatile ShmVoxelFrame& frame = shmPointer->data;
 
     auto startTime = Time::now();

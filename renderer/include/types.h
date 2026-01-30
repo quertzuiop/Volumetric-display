@@ -114,3 +114,4 @@ struct Mesh {
     std::vector<std::array<int, 3>> faces;
 };
 
+using KeyboardState = std::array<char, 8>; //doesnt include timestamp!

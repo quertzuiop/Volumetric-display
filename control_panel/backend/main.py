@@ -28,3 +28,4 @@ async def get_pressed_keys():
 async def set_pressed_keys(new: Key_strokes):
     print("new keys", new)
     pressed_keys = new
+    shm.write_keys(new.keys)
