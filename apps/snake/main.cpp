@@ -1,4 +1,6 @@
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include "renderer.h"
 #include "types.h"
 
@@ -7,6 +9,7 @@ using namespace std;
 const float snakeMaxRadius = 3.;
 const float snakeMinRadius = 1.5;
 const Color snakeColor = GREEN;
+const int sleepTimeMs = 500;
 
 const float height = 64;
 const float maxSizeFactorXY = 1./sqrt(2); //45.25
@@ -14,13 +17,13 @@ const int cellCountZ = 8;
 const int cellCountXY = floor(cellCountZ * maxSizeFactorXY);
 const float cellSize = height/cellCountZ;
 
-unordered_map<string, Vec3<int>> inputMoveMap = {
-    {"a", {-1, 0, 0}},
-    {"d", {1, 0, 0}},
-    {"s", {0, -1, 0}},
-    {"w", {0, 1, 0}},
-    {"j", {0, 0, -1}},
-    {"i", {0, 0, 1}}
+unordered_map<char, Vec3<int>> inputMoveMap = {
+    {'a', {-1, 0, 0}},
+    {'d', {1, 0, 0}},
+    {'s', {0, -1, 0}},
+    {'w', {0, 1, 0}},
+    {'j', {0, 0, -1}},
+    {'i', {0, 0, 1}}
 };
 
 struct SnakeSegment {
@@ -58,23 +61,23 @@ vector<SnakeSegment> buildSnake(const vector<Vec3<int>>& snakePositions, Scene& 
 
 int main() {
     Scene scene = Scene();
-
+    
     auto boundaryCorner1 = getPosOfCell({0, 0, 0});
     boundaryCorner1 = boundaryCorner1 - cellSize/2-0.5;
-
+    
     auto boundaryCorner2 = getPosOfCell({cellCountXY-1, cellCountXY-1, cellCountZ-1});
     boundaryCorner2 = boundaryCorner2 + cellSize/2-0.5;
-
-
+    
+    
     CuboidGeometry boundaryGeometry = {
         .v1 = boundaryCorner1,
         .v2 = boundaryCorner2,
         .thickness = 0.7,
         .isWireframe = true
     };
-
+    
     scene.createObject(boundaryGeometry, WHITE);
-
+    
     Vec3<int> headPos = {cellCountXY/2, cellCountXY/2, cellCountZ/2};
     auto headRenderPos = getPosOfCell(headPos);
 
@@ -95,6 +98,8 @@ int main() {
         headPos + (Vec3<int>){1, 1, -1}
     }, scene);
 
+    Vec3<int> movementDirection = inputMoveMap['i'];
+    
     for (int x = 0; x < cellCountXY; x++) {
         for (int y = 0; y < cellCountXY; y++) {
             for (int z = 0; z < cellCountZ; z++) {
@@ -106,15 +111,20 @@ int main() {
     for (int i = 0; i < 10; i++) {
         scene.render(true);
         
-        string input;
-        cin >> input;
-        auto movement = inputMoveMap[input];
+        auto keys = scene.getPressedKeys();
+
+        for (int keyIndex = keys.size()-1; keyIndex > 0; keyIndex++) {
+            if (inputMoveMap.find(keys[keyIndex]) != inputMoveMap.end()) {
+                movementDirection = inputMoveMap[keys[keyIndex]];
+                break;
+            }
+        }
         
         for (int i = snake.size() - 1; i >= 0; i--) { //not including last segment
             Vec3<int> newSegmentStart;
 
             if (i == 0) { //head movement
-                newSegmentStart = snake[i].p1 + movement;
+                newSegmentStart = snake[i].p1 + movementDirection;
             } else {
                 newSegmentStart = snake[i-1].p1;
             }
@@ -143,6 +153,6 @@ int main() {
             break;
         }
 
-        // scene.setObjectGeometry(player, (SphereGeometry){.pos=getPosOfCell(headPos), .radius=3});
+        this_thread::sleep_for(chrono::milliseconds(sleepTimeMs));
     }
 }

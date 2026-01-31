@@ -246,13 +246,5 @@ void Scene::render(bool writeToFile) {
 }
 
 KeyboardState Scene::getPressedKeys() {
-    if (shmPointer == nullptr) {
-        cout<<"AAAAAAAAAAAA POINTER"<<endl;
-    }
-    printf("C++ Layout Size: %lu\n", sizeof(ShmLayout));
-    printf("Offset of keyboardState: %lu\n", offsetof(ShmLayout, keyboardState));
-    printf("Keyboard state size: %lu\n", sizeof(KeyboardState));
-    cout<<"getting pressed keys"<<endl;
     return shmPointer->keyboardState;
-    cout<<"ahoj"<<endl;
 }

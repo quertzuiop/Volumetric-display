@@ -11,7 +11,7 @@ int main() {
     while (true) {
         cout << " Pressed keys: ";
         for (char key : scene.getPressedKeys()) {
-            printf("%s, ", key);
+            printf("%c, ", key);
         }
         cout<<endl;
         sleep(2);
