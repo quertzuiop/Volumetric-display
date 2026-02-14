@@ -47,6 +47,8 @@ int main(int argc, char* argv[]) {
         usePhotointerrupterFps = false;
     } catch (invalid_argument& e) {
         printf("fps value cannot be parsed\n");
+        usePhotointerrupterFps = false;
+        fps = 10;
     }
 
     if (usePhotointerrupterFps) {
@@ -77,13 +79,9 @@ int main(int argc, char* argv[]) {
     int oePin = 18;
     OutputInterface outputInterface(latchPin, oePin);
 
-
-    const Header header = {
-        .signature = 0xB0B,
-        .version = 1
-    };
-    //volatile ShmLayout *shmPointer = initShm(header, "vdshm");
+    // volatile ShmLayout *shmPointer = openShm("vdshm");
     volatile ShmLayout *shmPointer = openShm("vdshm");
+
 
     volatile ShmVoxelFrame& frame = shmPointer->data;
 

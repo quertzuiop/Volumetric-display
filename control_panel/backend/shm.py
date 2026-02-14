@@ -1,5 +1,6 @@
 from multiprocessing import shared_memory
 import ctypes
+import gc
 
 SHM_SIGNATURE = 0xB0B
 SHM_VERSION = 1
@@ -81,4 +82,5 @@ class Shm:
         if self.shm == None:
             print("shm not created yet")
             return
+        gc.collect() #release pointers
         self.shm.close()
