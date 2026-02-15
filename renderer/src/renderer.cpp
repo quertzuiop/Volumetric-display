@@ -246,5 +246,10 @@ void Scene::render(bool writeToFile) {
 }
 
 KeyboardState Scene::getPressedKeys() {
-    return shmPointer->keyboardState;
+    auto upper =  shmPointer->keyboardState;
+    KeyboardState lower;
+    for (int i = 0; i < upper.size(); i++) {
+        lower[i] = std::tolower(upper[i]);
+    }
+    return lower;
 }

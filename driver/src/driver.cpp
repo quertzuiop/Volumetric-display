@@ -47,8 +47,8 @@ int main(int argc, char* argv[]) {
         usePhotointerrupterFps = false;
     } catch (invalid_argument& e) {
         printf("fps value cannot be parsed\n");
-        usePhotointerrupterFps = false;
-        fps = 10;
+        // usePhotointerrupterFps = false;
+        // fps = 10;
     }
 
     if (usePhotointerrupterFps) {
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     ColorInterface colorInterface(colorPins1, colorPins2, clockPin);
 
     array<int, 5> addressPins1 = {22, 23, 24, 25, 15};
-    array<int, 5> addressPins2 = {3, 2, 26, 21, 14};
+    array<int, 5> addressPins2 = {2, 3, 21, 26, 14};
     AddressInterface addressInterface1(addressPins1);
     AddressInterface addressInterface2(addressPins2);
 
@@ -79,28 +79,43 @@ int main(int argc, char* argv[]) {
     int oePin = 18;
     OutputInterface outputInterface(latchPin, oePin);
 
+    printf("initializing Shared memory\n");
     // volatile ShmLayout *shmPointer = openShm("vdshm");
-    volatile ShmLayout *shmPointer = openShm("vdshm");
+    const Header header = {
+        .signature = 0xB0B,
+        .version = 1
+    };
+    volatile ShmLayout *shmPointer = initShm(header, "vdshm");
 
 
+    printf("a\n");
     volatile ShmVoxelFrame& frame = shmPointer->data;
 
     auto startTime = Time::now();
     int frameNum = 0;
 
     //wait for speed regulator
-    while (shmPointer->nextFrameDuration == 0) {}
+    printf("a\n");
+    while (shmPointer->nextFrameDuration == 0 && usePhotointerrupterFps) {}
 
     int64_t lastFrameStart = 0;
+    printf("a\n");
+
     while (true) {
 
         // printf("frame start time: %lld\n", shmPointer->nextFrameStart);
         // printf("last frame start time: %lld\n", shmPointer->nextFrameDuration);
 
-        while (lastFrameStart == shmPointer->nextFrameStart) {} //if new frame hasnt started (we are ahead), wait 
-        
-        auto nextFrameStart = shmPointer->nextFrameStart;
-        auto nextFrameDuration = shmPointer->nextFrameDuration;
+        while (lastFrameStart == shmPointer->nextFrameStart && usePhotointerrupterFps) {} //if new frame hasnt started (we are ahead), wait 
+        int64_t nextFrameStart;
+        int64_t nextFrameDuration;
+        if (usePhotointerrupterFps) {
+            nextFrameStart = shmPointer->nextFrameStart;
+            nextFrameDuration = shmPointer->nextFrameDuration;
+        } else {
+            nextFrameStart = chrono::time_point_cast<chrono::nanoseconds>(chrono::steady_clock::now()).time_since_epoch().count();
+            nextFrameDuration = 1000000000/fps;
+        }
         
         lastFrameStart = nextFrameStart;
 
@@ -108,7 +123,7 @@ int main(int argc, char* argv[]) {
         //     printf("Frame %d\n", frameNum);
         // }
         printf("Frame %d\n", frameNum);
-
+        long frameSum = 0;
         for (int i = 0; i < 2000; i++) {
             const ShmVoxelSlice& slice = (const_cast<ShmVoxelFrame&>(frame))[i];
             //265.25
@@ -126,15 +141,21 @@ int main(int argc, char* argv[]) {
             addressInterface1.setAddress(index1);
             addressInterface2.setAddress(index2);
 
-            for(int i = 0; i < 64; i++) {
+            for(int j = 0; j < 64; j++) {
                 // if (slice.data[i] != 0) {
                 //     printf("%d ", slice.data[i]);
                 // }
-                colorInterface.pushColor(slice.data[0+i], slice.data[64+i], slice.data[128+i], slice.data[192+i]);
+                frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
+                // colorInterface.pushColor(slice.data[0+j], slice.data[64+j], slice.data[128+j], slice.data[192+j]);
+                //colorInterface.pushColor(slice.data[0+j], slice.data[64+j], slice.data[128+j], slice.data[192+j]);
+                colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j]);
+
+
             }
             outputInterface.showUntil(targetSliceEndTime);
             // usleep(10000);
         }
+        printf("frame sum: %ld\n", frameSum);
         frameNum++;
     }
 }

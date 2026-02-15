@@ -45,11 +45,11 @@ list<int> initializedPins;
 void setAddress(int address) { 
     for (int i = 0; i < 5; i++) {
         if ((address>>i)%2==1) { //get nth bit of address
-            tiny_wait(10);
+            tiny_wait(20);
             GPIO_SET = (1<<addressPins[i]);
         }
         else {
-            tiny_wait(10);
+            tiny_wait(20);
             GPIO_CLR = (1<<addressPins[i]);
         }
     }
@@ -124,8 +124,8 @@ AddressInterface::AddressInterface(array<int, 5> pins) {
     }
 }
 void AddressInterface::setAddress(int address) {
-    uint8_t set;
-    uint8_t clear;
+    uint32_t set = 0;
+    uint32_t clear = 0;
     for (int i = 0; i < 5; i++) {
         // tiny_wait(5000);
         if ((address>>i)%2==1) { //get nth bit

@@ -64,6 +64,6 @@ async def get_pressed_keys():
 
 @app.put("/keystrokes/")
 async def set_pressed_keys(new: Key_strokes):
-    print_nice("new keys", new)
+    print_nice(f"new keys {new}")
     pressed_keys = new
     shm.write_keys(new.keys)

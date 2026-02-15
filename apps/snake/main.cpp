@@ -9,7 +9,7 @@ using namespace std;
 const float snakeMaxRadius = 3.;
 const float snakeMinRadius = 1.5;
 const Color snakeColor = GREEN;
-const int sleepTimeMs = 500;
+const int sleepTimeMs = 1500;
 
 const float height = 64;
 const float maxSizeFactorXY = 1./sqrt(2); //45.25
@@ -18,10 +18,10 @@ const int cellCountXY = floor(cellCountZ * maxSizeFactorXY);
 const float cellSize = height/cellCountZ;
 
 unordered_map<char, Vec3<int>> inputMoveMap = {
-    {'a', {-1, 0, 0}},
-    {'d', {1, 0, 0}},
-    {'s', {0, -1, 0}},
-    {'w', {0, 1, 0}},
+    {'d', {-1, 0, 0}},
+    {'a', {1, 0, 0}},
+    {'w', {0, -1, 0}},
+    {'s', {0, 1, 0}},
     {'j', {0, 0, -1}},
     {'i', {0, 0, 1}}
 };
@@ -108,41 +108,44 @@ int main() {
             }
         }
     }
-    for (int i = 0; i < 10; i++) {
-        scene.render(true);
+    this_thread::sleep_for(chrono::milliseconds(2000));
+    while (true) {
+        cout<< "move for this turn: " << movementDirection <<endl;
+        scene.render();
         
         auto keys = scene.getPressedKeys();
 
-        for (int keyIndex = keys.size()-1; keyIndex > 0; keyIndex++) {
+        for (int keyIndex = 0; keyIndex  <keys.size(); keyIndex++) {
+            printf("keyIndex %d: %c\n", keyIndex, keys[keyIndex]);
             if (inputMoveMap.find(keys[keyIndex]) != inputMoveMap.end()) {
                 movementDirection = inputMoveMap[keys[keyIndex]];
-                break;
+                cout<<"new movement dir: " << movementDirection <<endl;
             }
         }
+        printf("ahoj\n");
         
-        for (int i = snake.size() - 1; i >= 0; i--) { //not including last segment
+        for (int j = snake.size() - 1; j >= 0; j--) { //not including last segment
             Vec3<int> newSegmentStart;
 
-            if (i == 0) { //head movement
-                newSegmentStart = snake[i].p1 + movementDirection;
+            if (j == 0) { //head movement
+                newSegmentStart = snake[j].p1 + movementDirection;
             } else {
-                newSegmentStart = snake[i-1].p1;
+                newSegmentStart = snake[j-1].p1;
             }
             
-            snake[i].p2 = snake[i].p1;
-            snake[i].p1 = newSegmentStart;
+            snake[j].p2 = snake[j].p1;
+            snake[j].p1 = newSegmentStart;
 
-            cout<<"p1: " << snake[i].p1 << endl;
-            cout<<"p2: " << snake[i].p2 << endl;
+            cout<<"p1: " << snake[j].p1 << endl;
+            cout<<"p2: " << snake[j].p2 << endl;
 
-            scene.setObjectGeometry(snake[i].objectId, (CapsuleGeometry){
-                .start = getPosOfCell(snake[i].p1), 
-                .end = getPosOfCell(snake[i].p2),
-                .radius = snake[i].radius
+            scene.setObjectGeometry(snake[j].objectId, (CapsuleGeometry){
+                .start = getPosOfCell(snake[j].p1), 
+                .end = getPosOfCell(snake[j].p2),
+                .radius = snake[j].radius
             });
         }
-
-        headPos = snake[i].p1;
+        headPos = snake[0].p1;
         cout<<"new player pos" <<headPos << endl;
 
         if (

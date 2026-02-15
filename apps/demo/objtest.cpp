@@ -15,8 +15,8 @@ int main() {
     // scene.createObject(origin, {0.5, 1, 0.5});
     MeshGeometry geom = {.mesh = mesh, .isWireframe=true, .thickness=0.5};
 
-    auto meshObj = scene.createObject(geom, RED);
-    scene.setObjectTranslation(meshObj, {0, 0, 32});
-    scene.setObjectScale(meshObj, {10, 25, 25});
+    auto meshObj = scene.createObject(geom, WHITE);
+    scene.setObjectTranslation(meshObj, {0, 0, 0});
+    scene.setObjectScale(meshObj, {10, 10, 10});
     scene.render();
 }   
