@@ -4,7 +4,7 @@
 #include <variant>
 
 #include "types.h"
-#include "math.h"
+#include "linalg.h"
 #include "dither.h"
 #include "shm.h"
 

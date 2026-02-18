@@ -112,6 +112,8 @@ struct Mesh {
     std::vector<Vec3<float>> vertices;
     std::vector<std::pair<int, int>> edges;
     std::vector<std::array<int, 3>> faces;
+
+    void center(float padding = 0);
 };
 
 using KeyboardState = std::array<char, 8>; //doesnt include timestamp!

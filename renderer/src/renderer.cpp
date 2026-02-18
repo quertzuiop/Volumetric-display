@@ -5,7 +5,7 @@
 #include <cmath>
 
 #include "types.h"
-#include "math.h"
+#include "linalg.h"
 #include "grid.h"
 #include "io.h"
 #include "renderer.h"

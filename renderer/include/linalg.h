@@ -53,6 +53,24 @@ inline Vec3<T> cross(const Vec3<T>& v1, const Vec3<T>& v2) {
     };
 }
 
+template<typename T>
+inline Vec3<T> min(const Vec3<T>& a, const Vec3<T>& b) {
+    return {
+        a.x < b.x ? a.x : b.x,
+        a.y < b.y ? a.y : b.y,
+        a.z < b.z ? a.z : b.z,
+    };
+}
+
+template<typename T>
+inline Vec3<T> max(const Vec3<T>& a, const Vec3<T>& b) {
+    return {
+        a.x > b.x ? a.x : b.x,
+        a.y > b.y ? a.y : b.y,
+        a.z > b.z ? a.z : b.z,
+    };
+}
+
 template <typename T> inline int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }

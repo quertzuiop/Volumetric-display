@@ -8,4 +8,5 @@ CppProperties.json
 *.pdb
 output*
 apps/demo/assets/
+apps/showObj/assets/
 __pycache__/
