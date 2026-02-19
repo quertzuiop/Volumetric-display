@@ -89,9 +89,7 @@ void Scene::drawCapsule(
     float radius2 = radius * radius;
 
     auto vec = end - start;
-
     auto [minV, maxV] = arrangeBoundingBox(start, end);
-    
     auto bucketIndices = calculateIndicesFromBB(params, minV, maxV, radius);
 
     for (int bucketIndex : bucketIndices) {

@@ -29,6 +29,10 @@ inline Vec3<T> operator*(const Vec3<T>& v, float s) {
     return { v.x * s, v.y * s, v.z * s };
 }
 template<typename T>
+bool operator==(const Vec3<T>& a, const Vec3<T>& b) {
+    return {a.x == b.x and a.y == b.y and a.z == b.z};
+}
+template<typename T>
 inline T mnhtDist(const Vec3<T>& p1, const Vec3<T>& p2) {
     return abs(p1.x - p2.x) + abs(p1.y - p2.y) + abs(p1.z - p2.z);
 }

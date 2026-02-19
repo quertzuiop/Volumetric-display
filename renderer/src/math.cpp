@@ -1,7 +1,7 @@
 #include"types.h"
 #include"linalg.h"
 #include <algorithm>
-
+#include <iostream>
 
 Mat4 matMul(const Mat4& mat1, const Mat4& mat2) {
     auto a = sgn(-2);
@@ -31,9 +31,9 @@ void Mesh::center(float padding) {
         min.y = min.y < v.y ? min.y : v.y;
         min.z = min.z < v.z ? min.z : v.z;
     
-        max.x = max.x < v.x ? max.x : v.x;
-        max.y = max.y < v.y ? max.y : v.y;
-        max.z = max.z < v.z ? max.z : v.z;
+        max.x = max.x > v.x ? max.x : v.x;
+        max.y = max.y > v.y ? max.y : v.y;
+        max.z = max.z > v.z ? max.z : v.z;
     }
 
     auto meshCenter = (min + max) * 0.5;
@@ -46,7 +46,8 @@ void Mesh::center(float padding) {
     float scaleZ = (meshSize.z > 0) ? targetSize.z / meshSize.z : 1.0f;
 
     float scaleFactor = std::min({scaleX, scaleY, scaleZ});
-
+    std::cout<<"calculated mesh center: "<<meshCenter << ", bounds center: " <<boundsCenter << ", scale factor: " <<scaleFactor<<std::endl;
+    std::cout << "min: " << min << ", max: " << max<<std::endl;
     for (auto& v : vertices) {
         v = v - meshCenter;
         v = v * scaleFactor;

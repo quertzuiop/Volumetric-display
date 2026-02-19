@@ -7,6 +7,5 @@ build/
 CppProperties.json
 *.pdb
 output*
-apps/demo/assets/
-apps/showObj/assets/
+apps/*/assets/
 __pycache__/
