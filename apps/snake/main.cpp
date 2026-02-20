@@ -15,7 +15,9 @@ const float cellSize = height/cellCountZ;
 
 const float snakeMaxRadius = cellSize * 0.4;
 const float snakeMinRadius = snakeMaxRadius/2.0;
-const Color snakeColor = GREEN;
+const Color snakeColor1 = GREEN;
+const Color snakeColor2 = BLUE;
+
 
 const float appleRadius = cellSize * 0.4;
 const Color appleColor = RED;
@@ -41,24 +43,26 @@ struct SnakeSegment {
 using Snake = vector<SnakeSegment>;
 
 Vec3<float> getPosOfCell(Vec3<int> pos) {;
-    if (pos.x >= cellCountXY or pos.y >= cellCountXY or pos.z >= cellCountZ) {
-        printf("(%d, %d, %d)\n", pos.x, pos.y, pos.z);
-        throw invalid_argument("out of bounds");
-    }
+    // if (pos.x >= cellCountXY or pos.y >= cellCountXY or pos.z >= cellCountZ) {
+    //     printf("(%d, %d, %d)\n", pos.x, pos.y, pos.z);
+    //     throw invalid_argument("out of bounds");
+    // }
     return {
         (pos.x+0.5) * cellSize - (cellCountXY * cellSize / 2.),
         (pos.y+0.5) * cellSize - (cellCountXY * cellSize / 2.),
         (pos.z+0.5) * cellSize
     };
 }
-
 Snake buildSnake(const vector<Vec3<int>>& snakePositions, Scene& scene) {
     Snake res;
     
-    for (int i = 0; i < snakePositions.size() - 1; i++) {        
+    for (int i = 0; i < snakePositions.size() - 1; i++) {         
         CapsuleGeometry g = {.start = getPosOfCell(snakePositions[i]), .end = getPosOfCell(snakePositions[i+1])};
-        auto segment = scene.createObject(g, snakeColor);
-        res.push_back((SnakeSegment){.p1 = snakePositions[i], .p2 = snakePositions[i+1], .objectId = segment});
+        
+        Color currentColor = (i % 2 == 1) ? snakeColor2 : snakeColor1;
+        
+        auto segmentId = scene.createObject(g, currentColor);
+        res.push_back((SnakeSegment){.p1 = snakePositions[i], .p2 = snakePositions[i+1], .objectId = segmentId});
     }
     return res;
 }
@@ -71,17 +75,69 @@ Vec3<int> getNewApplePos(Snake snake) {
             static_cast<int> (random() % cellCountXY),
             static_cast<int> (random() % cellCountZ)
         };
+        bool collision = false;
         for (auto segment : snake) {
-            if (not (segment.p1 == res) and not (segment.p2 == res)) {
-                return res;
+            if (segment.p1 == res or segment.p2 == res) {
+                collision = true;
             }
         }
+        if (not collision) {return res;}
     }
+}
+;
+TextGeometry gameOverGeom1 = {
+    .text = "GAME",
+    .pos = {2.75*8, 0, 32},
+    .size = 8,
+    .thickness = 0.8,
+    .orientation = TextOrientation::POS_Y
+};
+TextGeometry gameOverGeom2 = {
+    .text = "OVER",
+    .pos = {2.75*8, 0, 22},
+    .size = 8,
+    .thickness = 0.8,
+    .orientation = TextOrientation::POS_Y
+};
+
+TextGeometry numberGeom = {
+    .text = "3",
+    .pos = {5, 0, 30},
+    .size = 10,
+    .thickness = 0.8,
+    .orientation = TextOrientation::POS_Y
+};
+
+void gameOver(Scene scene) {
+    scene.wipe();
+    scene.createObject(gameOverGeom1, RED);
+    scene.createObject(gameOverGeom2, RED);
+    scene.render();
+    printf("GAME OVER\n");
+    this_thread::sleep_for(chrono::milliseconds(2000));
+    scene.wipe();
 }
 
 int main() {
     Scene scene = Scene();
     srand(time(0));
+
+    auto countdown = scene.createObject(numberGeom, YELLOW);
+    scene.render();
+    this_thread::sleep_for(chrono::milliseconds(1000));
+
+    numberGeom.text = "2";
+    scene.setObjectGeometry(countdown, numberGeom);
+    scene.render();
+    this_thread::sleep_for(chrono::milliseconds(1000));
+
+    numberGeom.text = "1";
+    scene.setObjectGeometry(countdown, numberGeom);
+    scene.render();
+    this_thread::sleep_for(chrono::milliseconds(1000));
+
+    scene.removeObject(countdown);
+
     
     auto boundaryCorner1 = getPosOfCell({0, 0, 0});
     boundaryCorner1 = boundaryCorner1 - cellSize/2-0.5;
@@ -123,9 +179,9 @@ int main() {
         .radius = appleRadius
     }, appleColor);
 
-    this_thread::sleep_for(chrono::milliseconds(2000));
     // scene.render();
-    while (true) {
+    bool running = true;
+    while (running) {
         auto keys = scene.getPressedKeys();
 
         for (int keyIndex = keys.size()-1; keyIndex >= 0; keyIndex--) {
@@ -141,21 +197,28 @@ int main() {
         }
         
         headPos = snake[0].p1 + movementDirection;
-
+        
         if (headPos == applePos) {
-            //doesnt matter that start and end are the same, will be set to p1 in snake position update
             auto snakeEnd = snake[snake.size()-1].p2;
-
             CapsuleGeometry g = {.start = getPosOfCell(snakeEnd), .end = getPosOfCell(snakeEnd), .radius = 0.0f};
-            auto newSegment = scene.createObject(g, snakeColor);
+            
+            Color currentColor = (snake.size() % 2 == 1) ? snakeColor2 : snakeColor1;
+            
+            auto newSegment = scene.createObject(g, currentColor);
 
             snake.push_back((SnakeSegment) {
                 .p1 = snake[snake.size()-1].p2,
                 .p2 = snake[snake.size()-1].p2,
                 .objectId = newSegment
             });
-            //apple moved later
-        } 
+        }
+        if (
+            headPos.x < 0 || headPos.y < 0 || headPos.z < 0 ||
+            headPos.x >= cellCountXY || headPos.y >= cellCountXY || headPos.z >= cellCountZ
+        ) {
+            gameOver(scene);
+            running = false;
+        }
 
         for (int j = snake.size() - 1; j >= 0; j--) {
             
@@ -173,24 +236,21 @@ int main() {
             snake[j].p2 = snake[j].p1;
             snake[j].p1 = newSegmentStart;
 
-            cout<<"p1: " << snake[j].p1 << endl;
-            cout<<"p2: " << snake[j].p2 << endl;
-
             scene.setObjectGeometry(snake[j].objectId, (CapsuleGeometry){
                 .start = getPosOfCell(snake[j].p1), 
                 .end = getPosOfCell(snake[j].p2),
                 .radius = radius
             });
         }
-        cout<<"new player pos" <<headPos << endl;
 
-        if (
-            headPos.x < 0 || headPos.y < 0 || headPos.z < 0 ||
-            headPos.x > cellCountXY || headPos.y > cellCountXY || headPos.z > cellCountZ
-        ) {
-            printf("GAME OVER\n");
-            break;
+        cout<<"new player pos" <<headPos << endl;
+        for (auto& segment : snake) {
+            if (segment.p2 == headPos) { //segments overlap, except for the very first p1 (the head)
+                gameOver(scene);
+                running = false;
+            }
         }
+
 
         if (headPos == applePos) {
             auto newPos = getNewApplePos(snake);

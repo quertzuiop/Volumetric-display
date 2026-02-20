@@ -55,7 +55,22 @@ struct MeshGeometry {
     float thickness = 0.;
 };
 
-using Geometry = variant<ParticleGeometry, CapsuleGeometry, TriangleGeometry, SphereGeometry, CuboidGeometry, MeshGeometry>;
+enum class TextOrientation {
+    POS_X, NEG_X,
+    POS_Y, NEG_Y,
+    POS_Z, NEG_Z
+};
+
+// Update your TextGeometry struct
+struct TextGeometry {
+    std::string text;
+    Vec3<float> pos;
+    float size;
+    float thickness = 0.;
+    TextOrientation orientation = TextOrientation::POS_Y;
+};
+
+using Geometry = variant<ParticleGeometry, CapsuleGeometry, TriangleGeometry, SphereGeometry, CuboidGeometry, MeshGeometry, TextGeometry>;
 
 
 
@@ -104,10 +119,14 @@ class Scene {
         void setObjectScale(ObjectId id, Vec3<float> newScale);
         void setObjectIntrinsicPivot(ObjectId id, Vec3<float> newPivot);
 
+        void wipe();
+        void removeObject(ObjectId objectId);
+        
     Scene();
     private:
         ObjectId lastId = 0;
         vector<Object> objects = {};
+        vector<ObjectId> toRemove = {};
         unordered_map<ObjectId, uint32_t> idToIndex;
         ObjectId nextId();
 
@@ -154,6 +173,13 @@ class Scene {
         void drawMesh(
             const MeshGeometry& geometry,
             const Transformation& transformation,
+            const Color& color,
+            ClippingBehavior clippingBehavior,
+            ObjectId objectId, 
+            Render& render
+        );
+        void drawText(
+            const TextGeometry& geometry,
             const Color& color,
             ClippingBehavior clippingBehavior,
             ObjectId objectId, 

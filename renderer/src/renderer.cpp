@@ -68,7 +68,7 @@ Object::Object(ObjectId initId, Geometry initGeometry, Color initColor, Clipping
 Geometry Object::getTransformedGeometry() {
     Mat4 tMatrix = transformation.getMatrix();
     const Vec3<float>& pivot = transformation.pivot;
-    float maxScale = max(max(transformation.scale.x, transformation.scale.y), transformation.scale.z);
+    float maxScale = max({transformation.scale.x, transformation.scale.y, transformation.scale.z});
     Geometry res;
     visit([&](auto&& arg)
     {
@@ -110,6 +110,17 @@ Geometry Object::getTransformedGeometry() {
             .transformation = transformation,
             .thickness = arg.thickness
         };
+        else if constexpr (std::is_same_v<T, TextGeometry>) {
+            res = arg;
+            if (tMatrix != (Mat4) {{
+                {1, 0, 0, 0},
+                {0, 1, 0, 0},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+            }}) {
+                cerr<<"Warning: Transformation logic for text is not implemented. change geometry instead."<<endl;
+            }
+        }
         else
         static_assert(false, "non-exhaustive visitor!");
     }, geometry);
@@ -213,6 +224,15 @@ void Scene::setObjectIntrinsicPivot(ObjectId id, Vec3<float> newPivot) {
 void Scene::render(bool writeToFile) {
     printf("rendering %d objects\n", objects.size());
     Render render;
+    for (auto objToRemove : toRemove) {
+        for (RenderedPoint& lastRenderPoint : lastRender) {
+            if (lastRenderPoint.objectId == objToRemove) {
+                lastRenderPoint.objectId = (ObjectId)-1; // uint32_t max
+                lastRenderPoint.color = BLACK;
+                render.push_back(lastRenderPoint);
+            }
+        }
+    }
     for (Object& object : objects) {
         if (object.toRerender) {
             draw(object, render);
@@ -229,18 +249,29 @@ void Scene::render(bool writeToFile) {
             const PointDisplayParams& params = renderedPoint.pointDisplayParams;
             ShmVoxelSlice& targetSlice = frame[params.sliceIndex];
             uint8_t& colIndex = params.isDisplay1 ? targetSlice.index1 : targetSlice.index2;
-            //printf("Diplay one: %d\n", params.isDisplay1);
             colIndex = params.colIndex;
-            int baseIndexNumber = (static_cast<int>(!params.isDisplay1) * 128) + static_cast<int>(!params.isSide1)*64;
-            // if (baseIndexNumber == 64) {
-            //     printf("col index %d, side: %d base index: %d, cell index: %d\n", colIndex, params.isSide1, baseIndexNumber, params.rowIndex);
-            // }
-            targetSlice.data[baseIndexNumber+params.rowIndex] = static_cast<uint8_t>(renderedPoint.color);
-            /*
-            set update pattern info(index1, index2 for each slice)
-            generate list of indices of columns to iterate over (exclude empty ones)
 
-            */
+            int baseIndexNumber = (static_cast<int>(!params.isDisplay1) * 128) + static_cast<int>(!params.isSide1)*64;
+            targetSlice.data[baseIndexNumber+params.rowIndex] = static_cast<uint8_t>(renderedPoint.color);
+        }
+    }
+}
+
+void Scene::wipe() {
+    objects = {};
+    ShmVoxelFrame& frame = shmPointer->data;
+    for (auto& slice : frame) {
+        for (auto& voxel : slice.data) {
+            voxel = 0;
+        }
+    }
+}
+
+void Scene::removeObject(ObjectId objectId) {
+    toRemove.push_back(objectId);
+    for (int i = 0; i < objects.size(); i++) {
+        if (objects[i].getId() == objectId) {
+            objects.erase(objects.begin() + i);
         }
     }
 }

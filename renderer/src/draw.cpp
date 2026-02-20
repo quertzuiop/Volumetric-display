@@ -33,6 +33,9 @@ void Scene::draw(Object& object, Render& render) {
 
     else if constexpr (std::is_same_v<T, MeshGeometry>)
         drawMesh(arg, object.getTransformation(), color, clippingBehavior, objectId, pointsToAdd);
+
+    else if constexpr (std::is_same_v<T, TextGeometry>)
+        drawText(arg, color, clippingBehavior, objectId, pointsToAdd);
     
     else
         static_assert(false, "non-exhaustive visitor!");
@@ -349,5 +352,85 @@ void Scene::drawMesh(
                 render
             );
         }
+    }
+}
+
+void Scene::drawText(
+    const TextGeometry& geometry,
+    const Color& color,
+    ClippingBehavior clippingBehavior,
+    ObjectId objectId,
+    Render& render
+) {
+    float s = geometry.size;
+    float t = geometry.thickness;
+    float cursorOffset = 0.0f;
+
+    auto mapCoords = [&](float cx, float cy) -> Vec3<float> {
+        float actualX = (cx + cursorOffset) * s;
+        float actualY = cy * s;
+        Vec3<float> p = geometry.pos;
+        
+        switch (geometry.orientation) {
+            case TextOrientation::POS_Z: return {p.x - actualX, p.y - actualY, p.z};
+            case TextOrientation::NEG_Z: return {p.x + actualX, p.y - actualY, p.z};
+            case TextOrientation::POS_X: return {p.x, p.y - actualX, p.z + actualY};
+            case TextOrientation::NEG_X: return {p.x, p.y + actualX, p.z + actualY};
+            case TextOrientation::POS_Y: return {p.x - actualX, p.y, p.z + actualY};
+            case TextOrientation::NEG_Y: return {p.x + actualX, p.y, p.z + actualY};
+            default: return {p.x + actualX, p.y + actualY, p.z};
+        }
+    };
+
+    auto addLine = [&](float x1, float y1, float x2, float y2) {
+        Vec3<float> start = mapCoords(x1, y1);
+        Vec3<float> end = mapCoords(x2, y2);
+        CapsuleGeometry cap = {start, end, t};
+        drawCapsule(cap, color, clippingBehavior, objectId, render);
+    };
+
+    for (char c : geometry.text) {
+        c = std::toupper(c);
+        
+        if (c == 'A') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(0,0.5, 1,0.5); }
+        else if (c == 'B') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(1,0, 0,0); addLine(0,0.5, 1,0.5); }
+        else if (c == 'C') { addLine(1,1, 0,1); addLine(0,1, 0,0); addLine(0,0, 1,0); }
+        else if (c == 'D') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(1,0, 0,0); }
+        else if (c == 'E') { addLine(1,1, 0,1); addLine(0,1, 0,0); addLine(0,0, 1,0); addLine(0,0.5, 1,0.5); }
+        else if (c == 'F') { addLine(1,1, 0,1); addLine(0,1, 0,0); addLine(0,0.5, 1,0.5); }
+        else if (c == 'G') { addLine(1,1, 0,1); addLine(0,1, 0,0); addLine(0,0, 1,0); addLine(1,0, 1,0.5); addLine(0.5,0.5, 1,0.5); }
+        else if (c == 'H') { addLine(0,1, 0,0); addLine(1,1, 1,0); addLine(0,0.5, 1,0.5); }
+        else if (c == 'I') { addLine(0.5,1, 0.5,0); addLine(0,1, 1,1); addLine(0,0, 1,0); }
+        else if (c == 'J') { addLine(1,1, 1,0); addLine(1,0, 0,0); addLine(0,0, 0,0.5); }
+        else if (c == 'K') { addLine(0,1, 0,0); addLine(1,1, 0,0.5); addLine(0,0.5, 1,0); }
+        else if (c == 'L') { addLine(0,1, 0,0); addLine(0,0, 1,0); }
+        else if (c == 'M') { addLine(0,0, 0,1); addLine(0,1, 0.5,0.5); addLine(0.5,0.5, 1,1); addLine(1,1, 1,0); }
+        else if (c == 'N') { addLine(0,0, 0,1); addLine(0,1, 1,0); addLine(1,0, 1,1); }
+        else if (c == 'O') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(1,0, 0,0); }
+        else if (c == 'P') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0.5); addLine(1,0.5, 0,0.5); }
+        else if (c == 'Q') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(1,0, 0,0); addLine(0.5,0.5, 1,0); }
+        else if (c == 'R') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0.5); addLine(1,0.5, 0,0.5); addLine(0,0.5, 1,0); }
+        else if (c == 'S') { addLine(1,1, 0,1); addLine(0,1, 0,0.5); addLine(0,0.5, 1,0.5); addLine(1,0.5, 1,0); addLine(1,0, 0,0); }
+        else if (c == 'T') { addLine(0,1, 1,1); addLine(0.5,1, 0.5,0); }
+        else if (c == 'U') { addLine(0,1, 0,0); addLine(0,0, 1,0); addLine(1,0, 1,1); }
+        else if (c == 'V') { addLine(0,1, 0.5,0); addLine(0.5,0, 1,1); }
+        else if (c == 'W') { addLine(0,1, 0,0); addLine(0,0, 0.5,0.5); addLine(0.5,0.5, 1,0); addLine(1,0, 1,1); }
+        else if (c == 'X') { addLine(0,1, 1,0); addLine(1,1, 0,0); }
+        else if (c == 'Y') { addLine(0,1, 0.5,0.5); addLine(1,1, 0.5,0.5); addLine(0.5,0.5, 0.5,0); }
+        else if (c == 'Z') { addLine(0,1, 1,1); addLine(1,1, 0,0); addLine(0,0, 1,0); }
+        else if (c == '0') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(1,0, 0,0); addLine(0,0, 1,1); }
+        else if (c == '1') { addLine(0.5,0, 0.5,1); addLine(0.25,0.75, 0.5,1); }
+        else if (c == '2') { addLine(0,1, 1,1); addLine(1,1, 1,0.5); addLine(1,0.5, 0,0.5); addLine(0,0.5, 0,0); addLine(0,0, 1,0); }
+        else if (c == '3') { addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(1,0, 0,0); addLine(0,0.5, 1,0.5); }
+        else if (c == '4') { addLine(0,1, 0,0.5); addLine(0,0.5, 1,0.5); addLine(1,1, 1,0); }
+        else if (c == '5') { addLine(1,1, 0,1); addLine(0,1, 0,0.5); addLine(0,0.5, 1,0.5); addLine(1,0.5, 1,0); addLine(1,0, 0,0); }
+        else if (c == '6') { addLine(1,1, 0,1); addLine(0,1, 0,0); addLine(0,0, 1,0); addLine(1,0, 1,0.5); addLine(1,0.5, 0,0.5); }
+        else if (c == '7') { addLine(0,1, 1,1); addLine(1,1, 1,0); }
+        else if (c == '8') { addLine(0,0, 0,1); addLine(0,1, 1,1); addLine(1,1, 1,0); addLine(1,0, 0,0); addLine(0,0.5, 1,0.5); }
+        else if (c == '9') { addLine(1,0, 1,1); addLine(1,1, 0,1); addLine(0,1, 0,0.5); addLine(0,0.5, 1,0.5); }
+        else if (c == '-') { addLine(0,0.5, 1,0.5); }
+        else if (c == '_') { addLine(0,0, 1,0); }
+        
+        cursorOffset += 1.5f; 
     }
 }
