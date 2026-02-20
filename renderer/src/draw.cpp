@@ -11,7 +11,7 @@ void Scene::draw(Object& object, Render& render) {
     auto clippingBehavior = object.getClippingBehavior();
     auto objectId = object.getId();
 
-    printf("-drawing object with id %d\n", (int) objectId);
+    // printf("-drawing object with id %d\n", (int) objectId);
     Render pointsToAdd = {};
     visit([&](auto&& arg)
     {

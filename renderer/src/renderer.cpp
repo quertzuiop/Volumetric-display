@@ -19,7 +19,6 @@ int getTime() {
 }
 
 Mat4 Transformation::getMatrix() const {
-    printf("getting matrix\n");
     float x = rotation.x;
     float y = rotation.y;
     float z = rotation.z;
@@ -183,7 +182,7 @@ ObjectId Scene::createObject(const Geometry& initGeometry, const Color& initColo
     ObjectId newId = nextId();
     Object newObj = Object(newId, initGeometry, initColor, initClippingBehavior);
     objects.push_back(newObj);
-    cout<<"created object "<< newId<<endl;
+    // cout<<"created object "<< newId<<endl;
     idToIndex[lastId] = objects.size() - 1;
     return lastId;
 }
