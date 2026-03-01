@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         color = colorMap[getOption<string>("-color", argc, argv)];
     }
 
-    mesh.center(padding);
+    //mesh.center(padding);
 
     MeshGeometry meshGeom = {
         .mesh = mesh,

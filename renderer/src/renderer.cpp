@@ -168,11 +168,11 @@ Scene::Scene() {
         return; 
     }
     cout<<"wiping voxel data..."<<endl;
-    for (auto& slice : shmPointer->data) {
-        for (auto& voxel : slice.data) {
-            voxel = 0;
-        }
-    }
+   // for (auto& slice : shmPointer->data) {
+     //   for (auto& voxel : slice.data) {
+       //     voxel = 0;
+       // }
+   // }
 }
 ObjectId Scene::nextId() {
     printf("next id: %d", lastId+1);
