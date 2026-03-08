@@ -15,7 +15,10 @@ unordered_map<string, Color> colorMap = {
     {"green", GREEN},
     {"yellow", YELLOW},
     {"cyan", CYAN},
-    {"magenta", MAGENTA}
+    {"magenta", MAGENTA},
+    {"lime", {0.5, 1, 0}},
+    {"pink", {1, 0.5, 0.8}},
+    {"brown", {0.5, 0.4, 0}}
 };
 
 

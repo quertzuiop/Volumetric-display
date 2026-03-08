@@ -45,7 +45,7 @@ using Snake = vector<SnakeSegment>;
 
 Vec3<float> getPosOfCell(Vec3<int> pos) {;
     // if (pos.x >= cellCountXY or pos.y >= cellCountXY or pos.z >= cellCountZ) {
-    //     printf("(%d, %d, %d)\n", pos.x, pos.y, pos.z);
+    //     printf("(%d, %d, %d)\n", pos.x, pos.y, pos.z);el
     //     throw invalid_argument("out of bounds");
     // }
     return {
