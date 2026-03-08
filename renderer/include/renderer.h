@@ -119,11 +119,15 @@ class Scene {
         void setObjectScale(ObjectId id, Vec3<float> newScale);
         void setObjectIntrinsicPivot(ObjectId id, Vec3<float> newPivot);
 
-        void wipe();
+        void wipeScreen();
         void removeObject(ObjectId objectId);
+        void removeAllObjects();
+
+        void regenBayerOffset();
         
     Scene();
     private:
+        int sliceCount;
         ObjectId lastId = 0;
         vector<Object> objects = {};
         vector<ObjectId> toRemove = {};

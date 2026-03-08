@@ -152,14 +152,6 @@ void Object::setPivot(Vec3<float> pivot) {
 }
 
 Scene::Scene() {
-    cout<<"loading update pattern..."<<endl;
-    UpdatePattern updatePattern = loadUpdatePattern("../../update_pattern_gen/output.txt");
-    cout<<"building grid..."<<endl;
-    auto [mapping_, params_] = buildGrid(updatePattern, 20);
-    mapping = mapping_;
-    params = params_;
-    lastId = 0;
-
     cout<<"opening shm..."<<endl;
 
     shmPointer = openShm("vdshm");
@@ -167,15 +159,23 @@ Scene::Scene() {
         printf("SHM failed to open");
         return; 
     }
+
+    sliceCount = shmPointer->header.sliceCount;
+    printf("slice count: %d\n", sliceCount);
+
     cout<<"wiping voxel data..."<<endl;
-    for (auto& slice : shmPointer->data) {
-        for (auto& voxel : slice.data) {
-            voxel = 0;
-        }
-    }
+    wipeScreen();
+    
+    cout<<"loading update pattern..."<<endl;
+    UpdatePattern updatePattern = loadUpdatePattern(format("../../update_pattern_gen/{}.txt", sliceCount));
+    cout<<"building grid..."<<endl;
+    auto [mapping_, params_] = buildGrid(updatePattern, 20);
+    mapping = mapping_;
+    params = params_;
+    lastId = 0;
+
 }
 ObjectId Scene::nextId() {
-    printf("next id: %d", lastId+1);
     return ++lastId;
 }
 ObjectId Scene::createObject(const Geometry& initGeometry, const Color& initColor, ClippingBehavior initClippingBehavior) {
@@ -243,10 +243,9 @@ void Scene::render(bool writeToFile) {
     if (writeToFile) {
         writeRenderToFile(render, "output/render.ply");
     } else {
-        ShmVoxelFrame& frame = shmPointer->data;
         for (const RenderedPoint& renderedPoint : render) {
             const PointDisplayParams& params = renderedPoint.pointDisplayParams;
-            ShmVoxelSlice& targetSlice = frame[params.sliceIndex];
+            ShmVoxelSlice& targetSlice = shmPointer->data[params.sliceIndex];
             uint8_t& colIndex = params.isDisplay1 ? targetSlice.index1 : targetSlice.index2;
             colIndex = params.colIndex;
 
@@ -256,14 +255,16 @@ void Scene::render(bool writeToFile) {
     }
 }
 
-void Scene::wipe() {
-    objects = {};
-    ShmVoxelFrame& frame = shmPointer->data;
-    for (auto& slice : frame) {
-        for (auto& voxel : slice.data) {
+void Scene::wipeScreen() {
+    for (uint32_t i = 0; i < sliceCount; i++) {
+        for (auto& voxel : shmPointer->data[i].data) {
             voxel = 0;
         }
     }
+}
+
+void Scene::removeAllObjects() {
+    objects = {};
 }
 
 void Scene::removeObject(ObjectId objectId) {
@@ -274,6 +275,10 @@ void Scene::removeObject(ObjectId objectId) {
         }
     }
 }
+
+// void Scene::regenBayerOffset() {
+    
+// }
 
 KeyboardState Scene::getPressedKeys() {
     auto upper =  shmPointer->keyboardState;

@@ -3,13 +3,14 @@ import ctypes
 import gc
 
 SHM_SIGNATURE = 0xB0B
-SHM_VERSION = 1
+SHM_VERSION = 2
 
 class Header(ctypes.Structure):
     _fields_ = [
         ("signature", ctypes.c_uint32),    # 4 bytes
         ("version", ctypes.c_uint16),      # 2 bytes
-        ("reserved", ctypes.c_uint8 * 58)  # 58 bytes (Padding to reach 64 bytes)
+        ("sliceCount", ctypes.c_uint32),      # 4 bytes
+        ("reserved", ctypes.c_uint8 * 54)  # 54 bytes (Padding to reach 64 bytes)
     ]
     # Total size: 64 bytes (matches alignas(64))
 
@@ -21,24 +22,26 @@ class ShmVoxelSlice(ctypes.Structure):
     ]
     # Total size: 258 bytes
 
-ShmVoxelFrame = ShmVoxelSlice * 2000 
 
-class ShmLayout(ctypes.Structure):
-    _fields_ = [
-        ("header", Header),
-        ("nextFrameStart", ctypes.c_int64),
-        ("nextFrameDuration", ctypes.c_int64),
-        ("keyboardState", ctypes.c_uint8 * 8), #actually are chars, but i encountered some bugs
-        ("data", ShmVoxelFrame),
-        ("padding", ctypes.c_uint8 * 8)
-    ]
-    
 class Shm:
-    def __init__(self, name):
+    def __init__(self, name, colCount):
+        ShmVoxelFrame = ShmVoxelSlice * colCount
+
+        class ShmLayout(ctypes.Structure):
+            _fields_ = [
+                ("header", Header),
+                ("nextFrameStart", ctypes.c_int64),
+                ("nextFrameDuration", ctypes.c_int64),
+                ("keyboardState", ctypes.c_uint8 * 8), #actually are chars, but i encountered some bugs
+                ("data", ShmVoxelFrame),
+            ]
+            
         self.name = name
         self.size = ctypes.sizeof(ShmLayout)
         self.shm = None
         self.layout = None
+        self.colCount = colCount
+        self.layoutClass = ShmLayout
         
     def create(self):
         try:
@@ -51,15 +54,16 @@ class Shm:
             
             self.shm = shared_memory.SharedMemory(name=self.name, create=True, size = self.size)
         
-        self.layout = ShmLayout.from_buffer(self.shm.buf)
+        self.layout = self.layoutClass.from_buffer(self.shm.buf)
 
         self.layout.header.signature = SHM_SIGNATURE
         self.layout.header.version = SHM_VERSION
+        self.layout.header.sliceCount = self.colCount
         
     
     def write_keys(self, key_strokes):
-        print(f"Python Layout Size: {ctypes.sizeof(ShmLayout)}")
-        print(f"Offset of keyboardState: {ShmLayout.keyboardState.offset}")
+        print(f"Python Layout Size: {ctypes.sizeof(self.layoutClass)}")
+        print(f"Offset of keyboardState: {self.layoutClass.keyboardState.offset}")
         print(f"Python keyboard state size: {ctypes.sizeof(ctypes.c_uint8 * 8)}")
         
         #Python Layout Size: 516088

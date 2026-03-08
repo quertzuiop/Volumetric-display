@@ -42,6 +42,7 @@ T getOption(string_view argname, int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
     bool usePhotointerrupterFps = true; 
     int  fps = 0;
+
     try {
         fps = getOption<int>("-fps", argc, argv);
         usePhotointerrupterFps = false;
@@ -79,33 +80,23 @@ int main(int argc, char* argv[]) {
     int oePin = 18;
     OutputInterface outputInterface(latchPin, oePin);
 
-    printf("initializing Shared memory\n");
-    // volatile ShmLayout *shmPointer = openShm("vdshm");
-    const Header header = {
-        .signature = 0xB0B,
-        .version = 1
-    };
-    volatile ShmLayout *shmPointer = initShm(header, "vdshm");
+    printf("Opening Shared memory\n");
+    volatile ShmLayout *shmPointer = openShm("vdshm");
 
+    volatile auto& frame = shmPointer->data;
 
-    printf("a\n");
-    volatile ShmVoxelFrame& frame = shmPointer->data;
+    auto sliceCount = shmPointer->header.sliceCount;
+    printf("[driver] slice count: %d\n", sliceCount);
 
     auto startTime = Time::now();
     int frameNum = 0;
 
     //wait for speed regulator
-    printf("a\n");
     while (shmPointer->nextFrameDuration == 0 && usePhotointerrupterFps) {}
-
+    printf("first frame duration info received");
     int64_t lastFrameStart = 0;
-    printf("a\n");
 
     while (true) {
-
-        // printf("frame start time: %lld\n", shmPointer->nextFrameStart);
-        // printf("last frame start time: %lld\n", shmPointer->nextFrameDuration);
-
         while (lastFrameStart == shmPointer->nextFrameStart && usePhotointerrupterFps) {} //if new frame hasnt started (we are ahead), wait 
         int64_t nextFrameStart;
         int64_t nextFrameDuration;
@@ -119,20 +110,13 @@ int main(int argc, char* argv[]) {
         
         lastFrameStart = nextFrameStart;
 
-        // if (frameNum%24==0) {
-        //     printf("Frame %d\n", frameNum);
-        // }
         printf("Frame %d\n", frameNum);
         long frameSum = 0;
-        for (int i = 0; i < 2000; i++) {
-            const ShmVoxelSlice& slice = (const_cast<ShmVoxelFrame&>(frame))[i];
+        for (int i = 0; i < sliceCount; i++) {
+            const ShmVoxelSlice& slice = const_cast<ShmVoxelSlice&>(shmPointer->data[i]);
             //265.25
             //192.651
-            auto tfdtwav = (nextFrameDuration/2000 * (i+1) + nextFrameStart);
-            auto targetSliceEndTime = (nextFrameDuration/2000 * (i+1) + nextFrameStart);
-            // printf("frame duration: %lld ns\n", frameDurationNs.count());
-            // printf("slice duration: %lld ns\n", (frameDurationNs/2000 * (i+1)).count());
-            // printf("waiting until: %lld ms\n", chrono::time_point_cast<chrono::milliseconds>(targetSliceEndTime).time_since_epoch().count());
+            auto targetSliceEndTime = (nextFrameDuration/sliceCount * (i+1) + nextFrameStart);
 
             auto index1 = 31-static_cast<int> (slice.index1);
             auto index2 = 31-static_cast<int> (slice.index2);

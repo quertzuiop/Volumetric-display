@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <filesystem>
+#include <format>
 #include "types.h"
 using namespace std;
 
@@ -166,7 +167,7 @@ bool comparePatterns(const UpdatePatternPoint& p1, const UpdatePatternPoint& p2)
 }
 
 UpdatePattern loadUpdatePattern(string path) {
-    cout<<"loading update pattern file into memory"<<endl;
+    cout<<"loading update pattern file '"<<path<<"' into memory"<<endl;
     ifstream file(path);
     stringstream buffer;
 
@@ -175,7 +176,7 @@ UpdatePattern loadUpdatePattern(string path) {
 
     vector<string> splitFileStr = split(fileStr, "\n");
     UpdatePattern res;
-    cout<<"parsing update pattern file"<<endl;
+    cout<<"parsing update pattern file, length: "<<splitFileStr.size()<<endl;
     for (const string& line : splitFileStr) {
         if (line == "") continue;
         vector<string> lineInfo = split(line);
@@ -219,6 +220,7 @@ UpdatePattern loadUpdatePattern(string path) {
             }
         }
     }
+    printf("finished parsing. update pattern has %d points.\n", res.size());
     sort(res.begin(), res.end(), comparePatterns);
     return res;
 }

@@ -74,8 +74,8 @@ tuple<unordered_map<int, UpdatePattern>, GridParams> buildGrid(const UpdatePatte
     }
 
     cout << "grid size: " << gridSize << endl;
-    printf("Min: %f %f %f", Min.x, Min.y, Min.z);
-    printf("Max: %f %f %f", Max.x, Max.y, Max.z);
+    printf("Min: %f %f %f\n", Min.x, Min.y, Min.z);
+    printf("Max: %f %f %f\n", Max.x, Max.y, Max.z);
 
     float cellSizeZ = (Max.z - Min.z) / gridSize;
     float cellSizeX = (Max.x - Min.x) / gridSize;

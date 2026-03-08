@@ -14,6 +14,8 @@ def print_nice(x): print(f"[Control panel] {x}")
 DRIVER_BIN = "../../driver/build/main"
 SPEED_REGULATOR_BIN = "../../speedRegulator/build/main"
 
+SLICE_COUNT = 4000
+
 class Key_stroke(BaseModel):
     key_code: str
     timestamp: int
@@ -21,7 +23,7 @@ class Key_stroke(BaseModel):
 class Key_strokes(BaseModel):
     keys: list[Key_stroke]
 
-shm = Shm("vdshm")
+shm = Shm("vdshm", SLICE_COUNT)
 shm.create()
 processes = []
 
@@ -31,12 +33,12 @@ async def lifespan(app: FastAPI):
     
     print_nice("Launching driver")
     try:
-        p_driver = subprocess.Popen([DRIVER_BIN])
+        p_driver = subprocess.Popen([DRIVER_BIN, str(SLICE_COUNT)])
         processes.append(p_driver)
     except FileNotFoundError:
-        print_nice(f"Error: Could not find {SPEED_REGULATOR_BIN}")
+        print_nice(f"Error: Could not find {DRIVER_BIN + f" {SLICE_COUNT}"}")
     
-    time.sleep(0.5)
+    time.sleep(1)
     print_nice("Launching speed regulator")
     
     try:
