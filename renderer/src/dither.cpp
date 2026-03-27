@@ -131,7 +131,7 @@ Mat3d<float> generateBayer(int n) {
     for (int x = 0; x < bayer.size(); ++x){
         for (int y = 0; y < bayer[0].size(); ++y){
             for (int z = 0; z < bayer[0][0].size(); ++z){
-                normalized[x][y][z] = (bayer[x][y][z] + 0.5)/ (float) pow(bayerSize, 3);
+                normalized[x][y][z] = (bayer[x][y][z]) / (float) pow(bayerSize, 3);
             }       
         }
     }
@@ -139,7 +139,7 @@ Mat3d<float> generateBayer(int n) {
 }
 Mat3d<float> bayer = generateBayer(N);
 
-Color1b dither(Color color, float ditherRank) {
+BinaryColor dither(Color color, float ditherRank) {
     printf("rank: %f color: %f\n", ditherRank, color.r);
     bool r = powf(color.r, 1.5) > ditherRank;
     //bool g = powf(color.g, 1.5) > fmod(ditherRank + 0.333 ,1.);
@@ -148,13 +148,13 @@ Color1b dither(Color color, float ditherRank) {
     bool b = powf(color.b, 1.5) > fmod(ditherRank + 0.666, 1.);
     return {r, g, b};
 }
-Color1b dither(Color color, Vec3<float> pos) {
+BinaryColor dither(Color color, Vec3<float> pos) {
     int ix = floor(pos.x)+35; //avoid negative index modulo error
     int iy = floor(pos.y)+35; //avoid negative index modulo error
     int iz = floor(pos.z)+1;
-    bool r = bayer[(ix) % bayerSize][iy % bayerSize][iz % bayerSize] <= color.r;
-    bool g = bayer[(ix+1) % bayerSize][(iy+2) % bayerSize][iz % bayerSize] <= color.g;
-    bool b = bayer[(ix+1) % bayerSize][(iy+1) % bayerSize][(iz+1) % bayerSize] <= color.b;
+    uint8_t r = 4 * (color.r + bayer[(ix) % bayerSize][iy % bayerSize][iz % bayerSize]);
+    uint8_t g = 4 * (color.g + bayer[(ix+1) % bayerSize][(iy+2) % bayerSize][iz % bayerSize]);
+    uint8_t b = 4 * (color.b + bayer[(ix+1) % bayerSize][(iy+1) % bayerSize][(iz+1) % bayerSize]);
     // printf("requested: %f %f %f, got: %d %d %d, compared with: %f %f %f\n", color.r, color.g, color.b, r, g, b, bayer[(ix+1) % bayerSize][iy % bayerSize][iz % bayerSize], bayer[ix% bayerSize][(iy+1) % bayerSize][iz % bayerSize], bayer[ix % bayerSize][iy % bayerSize][(iz+1) % bayerSize]);
     return {r, g, b};
 }

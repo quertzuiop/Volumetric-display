@@ -14,6 +14,8 @@ using namespace std;
 using namespace chrono_literals;
 using Time = chrono::steady_clock;
 
+const float gammaCorrectionRatio = 0.3;
+
 template<typename T>
 concept optionType = same_as<T, int> ||
                      same_as<T, bool>;
@@ -38,6 +40,7 @@ T getOption(string_view argname, int argc, char* argv[]) {
 
     throw invalid_argument("argument not found");
 }
+
 
 int main(int argc, char* argv[]) {
     bool usePhotointerrupterFps = true; 
@@ -88,6 +91,8 @@ int main(int argc, char* argv[]) {
     auto sliceCount = shmPointer->header.sliceCount;
     printf("[driver] slice count: %d\n", sliceCount);
 
+    auto useTwoBitColor = shmPointer->header.twoBitColor;
+
     auto startTime = Time::now();
     int frameNum = 0;
 
@@ -112,32 +117,54 @@ int main(int argc, char* argv[]) {
 
         printf("Frame %d\n", frameNum);
         long frameSum = 0;
-        for (int i = 0; i < sliceCount; i++) {
-            const ShmVoxelSlice& slice = const_cast<ShmVoxelSlice&>(shmPointer->data[i]);
-            //265.25
-            //192.651
-            auto targetSliceEndTime = (nextFrameDuration/sliceCount * (i+1) + nextFrameStart);
-
-            auto index1 = 31-static_cast<int> (slice.index1);
-            auto index2 = 31-static_cast<int> (slice.index2);
-
-            //printf("\nindex: %d\n", index1);
-            addressInterface1.setAddress(index1);
-            addressInterface2.setAddress(index2);
-
-            for(int j = 0; j < 64; j++) {
-                // if (slice.data[i] != 0) {
-                //     printf("%d ", slice.data[i]);
-                // }
-                frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
-                // colorInterface.pushColor(slice.data[0+j], slice.data[64+j], slice.data[128+j], slice.data[192+j]);
-                //colorInterface.pushColor(slice.data[0+j], slice.data[64+j], slice.data[128+j], slice.data[192+j]);
-                colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j]);
-
-
+        if (not useTwoBitColor) {
+            for (int i = 0; i < sliceCount; i++) {
+                const ShmVoxelSlice& slice = const_cast<ShmVoxelSlice&>(shmPointer->data[i]);
+                //265.25
+                //192.651
+                auto targetSliceEndTime = (nextFrameDuration/sliceCount * (i+1) + nextFrameStart);
+    
+                auto index1 = 31-static_cast<int> (slice.index1);
+                auto index2 = 31-static_cast<int> (slice.index2);
+    
+                addressInterface1.setAddress(index1);
+                addressInterface2.setAddress(index2);
+    
+                for(int j = 0; j < 64; j++) {
+                    frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
+                    colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j], 0b10);
+                }
+                outputInterface.showUntil(targetSliceEndTime);
+                // usleep(10000);
             }
-            outputInterface.showUntil(targetSliceEndTime);
-            // usleep(10000);
+        } else {
+            for (int i = 0; i < sliceCount; i++) {
+                const ShmVoxelSlice& slice = const_cast<ShmVoxelSlice&>(shmPointer->data[i]);
+                
+                auto index1 = 31-static_cast<int> (slice.index1);
+                auto index2 = 31-static_cast<int> (slice.index2);
+                
+                addressInterface1.setAddress(index1);
+                addressInterface2.setAddress(index2);
+
+                auto time = std::chrono::steady_clock::now().time_since_epoch().count();
+
+                auto targetSliceEndTime = (nextFrameDuration/sliceCount * (i+1) + nextFrameStart);
+
+                auto targetFirstBitEndTime = time + gammaCorrectionRatio * (targetSliceEndTime - time);
+                
+                for(int j = 0; j < 64; j++) {
+                    frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
+                    colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j], 0b10);    
+                }
+                outputInterface.showUntil(targetFirstBitEndTime);
+                
+                for(int j = 0; j < 64; j++) {
+                    frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
+                    colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j], 0b01);    
+                }
+                outputInterface.showUntil(targetSliceEndTime);
+            }
         }
         printf("frame sum: %ld\n", frameSum);
         frameNum++;

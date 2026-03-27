@@ -19,17 +19,17 @@ std::ostream& operator<<(std::ostream& os, const Vec3<T>& v) {
 
 using Mat4 = std::array<std::array<float, 4>, 4>;
 
-struct Color1b {
-    bool r;
-    bool g;
-    bool b;
+struct BinaryColor {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
 
     inline operator uint8_t() const {
         return
             static_cast<uint8_t>(
-              (r ? (1u<<2) : 0u)
-            | (g ? (1u<<1) : 0u)
-            | (b ? 1u : 0u)
+              (r<<4)
+            | (g<<2)
+            |  b
         );
     }
 };
@@ -38,11 +38,11 @@ struct Color {
     float g;
     float b;
 
-    inline operator Color1b() const {
+    inline operator BinaryColor() const {
         return {
-            r>0.5,
-            g>0.5,
-            b>0.5
+            (uint8_t)(r*4),
+            (uint8_t)(g*4),
+            (uint8_t)(b*4)
         };
     }
 };
@@ -93,7 +93,7 @@ struct RenderedPoint {
     PointDisplayParams pointDisplayParams;
     Vec3<float> pos;
     Vec3<float> normal;
-    Color1b color;
+    BinaryColor color;
     ClippingBehavior clippingBehavior;
 };
 

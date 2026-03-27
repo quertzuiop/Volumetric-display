@@ -14,7 +14,8 @@ def print_nice(x): print(f"[Control panel] {x}")
 DRIVER_BIN = "../../driver/build/main"
 SPEED_REGULATOR_BIN = "../../speedRegulator/build/main"
 
-SLICE_COUNT = 4000
+SLICE_COUNT = 2000
+USE_2_BIT = False
 
 class Key_stroke(BaseModel):
     key_code: str
@@ -23,7 +24,7 @@ class Key_stroke(BaseModel):
 class Key_strokes(BaseModel):
     keys: list[Key_stroke]
 
-shm = Shm("vdshm", SLICE_COUNT)
+shm = Shm("vdshm", SLICE_COUNT, USE_2_BIT)
 shm.create()
 processes = []
 

@@ -12,7 +12,7 @@ class ColorInterface {
         std::array<int, 6> pinNums1;
         std::array<int, 6> pinNums2;
         int clockPinNum;
-        void pushColor(int c11, int c12, int c21, int c22);
+        void pushColor(int c11, int c12, int c21, int c22, uint8_t bitMask);
     ColorInterface (std::array<int, 6> ColorPins1, std::array<int, 6> ColorPins2, int clockPin);
 };
 class AddressInterface {

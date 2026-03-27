@@ -105,11 +105,11 @@ ColorInterface::ColorInterface (array<int, 6> colorPins1, array<int, 6> colorPin
     pinInit(clockPinNum);
 }
 
-void ColorInterface::pushColor(int c11, int c12, int c21, int c22) {
-    int regVal = ((c11>>2 & 1)<<pinNums1[0]) | ((c11>>1 & 1)<<pinNums1[1]) | ((c11 & 1)<<pinNums1[2])
-                |((c12>>2 & 1)<<pinNums1[3]) | ((c12>>1 & 1)<<pinNums1[4]) | ((c12 & 1)<<pinNums1[5])
-                |((c21>>2 & 1)<<pinNums2[0]) | ((c21>>1 & 1)<<pinNums2[1]) | ((c21 & 1)<<pinNums2[2])
-                |((c22>>2 & 1)<<pinNums2[3]) | ((c22>>1 & 1)<<pinNums2[4]) | ((c22 & 1)<<pinNums2[5]);
+void ColorInterface::pushColor(int c11, int c12, int c21, int c22, uint8_t bitMask) {
+    int regVal = ((c11>>4 & bitMask)<<pinNums1[0]) | ((c11>>2 & bitMask)<<pinNums1[1]) | ((c11 & bitMask)<<pinNums1[2])
+                |((c12>>4 & bitMask)<<pinNums1[3]) | ((c12>>2 & bitMask)<<pinNums1[4]) | ((c12 & bitMask)<<pinNums1[5])
+                |((c21>>4 & bitMask)<<pinNums2[0]) | ((c21>>2 & bitMask)<<pinNums2[1]) | ((c21 & bitMask)<<pinNums2[2])
+                |((c22>>4 & bitMask)<<pinNums2[3]) | ((c22>>2 & bitMask)<<pinNums2[4]) | ((c22 & bitMask)<<pinNums2[5]);
     GPIO_SET = regVal;
     GPIO_SET = (1<<clockPinNum);
     tiny_wait(25); //adjust this for less flicker but less brightness

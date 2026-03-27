@@ -25,7 +25,8 @@ struct alignas(64) Header {
     uint32_t signature; //4
     uint16_t version;   //2
     uint32_t sliceCount;
-    uint8_t reserved[52];
+    bool twoBitColor;
+    uint8_t reserved[51];
 };
 
 struct ShmLayout {

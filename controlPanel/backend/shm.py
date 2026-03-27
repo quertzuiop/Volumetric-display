@@ -10,7 +10,8 @@ class Header(ctypes.Structure):
         ("signature", ctypes.c_uint32),    # 4 bytes
         ("version", ctypes.c_uint16),      # 2 bytes
         ("sliceCount", ctypes.c_uint32),      # 4 bytes
-        ("reserved", ctypes.c_uint8 * 54)  # 54 bytes (Padding to reach 64 bytes)
+        ("twoBitColor", ctypes.c_bool),
+        ("reserved", ctypes.c_uint8 * 53)
     ]
     # Total size: 64 bytes (matches alignas(64))
 
@@ -24,7 +25,7 @@ class ShmVoxelSlice(ctypes.Structure):
 
 
 class Shm:
-    def __init__(self, name, colCount):
+    def __init__(self, name, colCount, twoBitColor):
         ShmVoxelFrame = ShmVoxelSlice * colCount
 
         class ShmLayout(ctypes.Structure):
@@ -41,6 +42,7 @@ class Shm:
         self.shm = None
         self.layout = None
         self.colCount = colCount
+        self.twoBitColor = twoBitColor
         self.layoutClass = ShmLayout
         
     def create(self):
@@ -59,6 +61,7 @@ class Shm:
         self.layout.header.signature = SHM_SIGNATURE
         self.layout.header.version = SHM_VERSION
         self.layout.header.sliceCount = self.colCount
+        self.layout.header.twoBitColor = self.twoBitColor
         
     
     def write_keys(self, key_strokes):
