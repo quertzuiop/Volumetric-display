@@ -15,7 +15,7 @@ DRIVER_BIN = "../../driver/build/main"
 SPEED_REGULATOR_BIN = "../../speedRegulator/build/main"
 
 SLICE_COUNT = 2000
-USE_2_BIT = False
+USE_2_BIT = True
 
 class Key_stroke(BaseModel):
     key_code: str

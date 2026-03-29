@@ -40,9 +40,9 @@ struct Color {
 
     inline operator BinaryColor() const {
         return {
-            (uint8_t)(r*4),
-            (uint8_t)(g*4),
-            (uint8_t)(b*4)
+            (uint8_t)(r*3) & 3, //clamp to avoid overflow
+            (uint8_t)(g*3) & 3,
+            (uint8_t)(b*3) & 3
         };
     }
 };
