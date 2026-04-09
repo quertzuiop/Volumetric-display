@@ -130,7 +130,7 @@ TextGeometry numberGeom = {
 };
 
 void gameOver(Scene scene, int score) {
-    scene.wipe();
+    scene.wipeScreen();
     scene.createObject(gameOverGeom1, RED);
     scene.createObject(gameOverGeom2, RED);
     scoreGeom.text = format("SCR {}", score);
@@ -138,7 +138,7 @@ void gameOver(Scene scene, int score) {
     scene.render();
     printf("GAME OVER\n");
     this_thread::sleep_for(chrono::milliseconds(2000));
-    scene.wipe();
+    scene.wipeScreen();
 }
 
 int main() {

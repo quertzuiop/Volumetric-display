@@ -106,12 +106,19 @@ ColorInterface::ColorInterface (array<int, 6> colorPins1, array<int, 6> colorPin
 }
 
 void ColorInterface::pushColor(int c11, int c12, int c21, int c22, uint8_t bitMask) {
-    // Adding '!= 0' converts the masked bit to strictly 0 or 1 before shifting!
     int regVal = (((c11>>4 & bitMask) != 0)<<pinNums1[0]) | (((c11>>2 & bitMask) != 0)<<pinNums1[1]) | (((c11 & bitMask) != 0)<<pinNums1[2])
                 |(((c12>>4 & bitMask) != 0)<<pinNums1[3]) | (((c12>>2 & bitMask) != 0)<<pinNums1[4]) | (((c12 & bitMask) != 0)<<pinNums1[5])
                 |(((c21>>4 & bitMask) != 0)<<pinNums2[0]) | (((c21>>2 & bitMask) != 0)<<pinNums2[1]) | (((c21 & bitMask) != 0)<<pinNums2[2])
                 |(((c22>>4 & bitMask) != 0)<<pinNums2[3]) | (((c22>>2 & bitMask) != 0)<<pinNums2[4]) | (((c22 & bitMask) != 0)<<pinNums2[5]);
+
+                
+    // int regVal = (1<<pinNums1[0]) | (1<<pinNums1[1]) | (1<<pinNums1[2])
+    //             |(1<<pinNums1[3]) | (1<<pinNums1[4]) | (1<<pinNums1[5])
+    //             |(1<<pinNums2[0]) | (1<<pinNums2[1]) | (1<<pinNums2[2])
+    //             |(1<<pinNums2[3]) | (1<<pinNums2[4]) | (1<<pinNums2[5]);
+
     GPIO_SET = regVal;
+    tiny_wait(5);
     GPIO_SET = (1<<clockPinNum);
     tiny_wait(25); //adjust this for less flicker but less brightness
     GPIO_CLR = regVal | (1<<clockPinNum);
@@ -146,13 +153,15 @@ OutputInterface::OutputInterface(int latchPin_, int oePin_) {
     pinInit(oePin, true);
 }
 
-void OutputInterface::showUntil(int64_t stopTime) {
+int OutputInterface::showUntil(int64_t stopTime) {
+    int i =0;
     GPIO_SET = (1<<latchPin);
     tiny_wait(10);
     GPIO_CLR = (1<<latchPin);
     GPIO_CLR = (1<<oePin);
-    while (std::chrono::steady_clock::now().time_since_epoch().count() < stopTime) {spin_asm();}
+    while (std::chrono::steady_clock::now().time_since_epoch().count() < stopTime) {i++;}
     GPIO_SET = (1<<18);
+    return i;
 }
 void OutputInterface::latch() {
     GPIO_SET = (1<<latchPin);

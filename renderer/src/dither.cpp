@@ -152,9 +152,9 @@ BinaryColor dither(Color color, Vec3<float> pos) {
     int ix = floor(pos.x)+35; //avoid negative index modulo error
     int iy = floor(pos.y)+35; //avoid negative index modulo error
     int iz = floor(pos.z)+1;
-    uint8_t r = max(0, min(3, (int)(4 * color.r + 0.5*bayer[(ix  ) % bayerSize][iy     % bayerSize][iz     % bayerSize])));
-    uint8_t g = max(0, min(3, (int)(4 * color.g + 0.5*bayer[(ix+1) % bayerSize][(iy+2) % bayerSize][iz     % bayerSize])));
-    uint8_t b = max(0, min(3, (int)(4 * color.b + 0.5*bayer[(ix+1) % bayerSize][(iy+1) % bayerSize][(iz+1) % bayerSize])));
-    printf("requested: %f %f %f, got: %d %d %d, compared with: %f %f %f\n", color.r, color.g, color.b, r, g, b, bayer[(ix+1) % bayerSize][iy % bayerSize][iz % bayerSize], bayer[ix% bayerSize][(iy+1) % bayerSize][iz % bayerSize], bayer[ix % bayerSize][iy % bayerSize][(iz+1) % bayerSize]);
-    return {3, 3, 3};
+    uint8_t r = max(0, min(3, (int)(3 * color.r + bayer[(ix  ) % bayerSize][iy     % bayerSize][iz     % bayerSize])));
+    uint8_t g = max(0, min(3, (int)(3 * color.g + bayer[(ix+1) % bayerSize][(iy+2) % bayerSize][iz     % bayerSize])));
+    uint8_t b = max(0, min(3, (int)(3 * color.b + bayer[(ix+1) % bayerSize][(iy+1) % bayerSize][(iz+1) % bayerSize])));
+    //printf("requested: %f %f %f, got: %d %d %d, compared with: %f %f %f\n", color.r, color.g, color.b, r, g, b, bayer[(ix+1) % bayerSize][iy % bayerSize][iz % bayerSize], bayer[ix% bayerSize][(iy+1) % bayerSize][iz % bayerSize], bayer[ix % bayerSize][iy % bayerSize][(iz+1) % bayerSize]);
+    return {r, g, b};
 }

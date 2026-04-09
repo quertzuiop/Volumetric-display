@@ -14,7 +14,7 @@ using namespace std;
 using namespace chrono_literals;
 using Time = chrono::steady_clock;
 
-const float gammaCorrectionRatio = 0.3;
+const double gammaCorrectionRatio = 0.78;
 
 template<typename T>
 concept optionType = same_as<T, int> ||
@@ -101,6 +101,8 @@ int main(int argc, char* argv[]) {
     printf("first frame duration info received");
     int64_t lastFrameStart = 0;
 
+    int sliceColorPushTimeCompensation = 0; // ns
+
     while (true) {
         while (lastFrameStart == shmPointer->nextFrameStart && usePhotointerrupterFps) {} //if new frame hasnt started (we are ahead), wait 
         int64_t nextFrameStart;
@@ -117,6 +119,9 @@ int main(int argc, char* argv[]) {
 
         printf("Frame %d\n", frameNum);
         long frameSum = 0;
+        long totalWaitMSB = 0;
+        long totalWaitLSB = 0;
+
         if (not useTwoBitColor) {
             for (int i = 0; i < sliceCount; i++) {
                 const ShmVoxelSlice& slice = const_cast<ShmVoxelSlice&>(shmPointer->data[i]);
@@ -131,10 +136,10 @@ int main(int argc, char* argv[]) {
                 addressInterface2.setAddress(index2);
     
                 for(int j = 0; j < 64; j++) {
-                    frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
+                    //frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
                     colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j], 0b10);
                 }
-                outputInterface.showUntil(targetSliceEndTime);
+                totalWaitMSB += outputInterface.showUntil(targetSliceEndTime);
                 // usleep(10000);
             }
         } else {
@@ -151,22 +156,38 @@ int main(int argc, char* argv[]) {
 
                 auto targetSliceEndTime = (nextFrameDuration/sliceCount * (i+1) + nextFrameStart);
 
-                auto targetFirstBitEndTime = time + gammaCorrectionRatio * (targetSliceEndTime - time);
-                
+                //auto targetFirstBitEndTime = time + gammaCorrectionRatio * (targetSliceEndTime - time);
+
+                int64_t remainingTime = targetSliceEndTime - time;
+
+                int64_t targetFirstBitEndTime = time + static_cast<int64_t>(remainingTime * gammaCorrectionRatio);
+
                 for(int j = 0; j < 64; j++) {
-                    frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
+                    //frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
                     colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j], 0b10);    
                 }
-                outputInterface.showUntil(targetFirstBitEndTime);
-                
+                totalWaitMSB += outputInterface.showUntil(targetFirstBitEndTime + sliceColorPushTimeCompensation);
+                //200000: 148 / 432
+                //250000: 150 / 430
+                //300000: 570 / 0
+                //500000: 590 / 0
                 for(int j = 0; j < 64; j++) {
-                    frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
+                    //frameSum += slice.data[0+j] + slice.data[64+j] + slice.data[128+j] + slice.data[192+j];
                     colorInterface.pushColor(slice.data[63-j], slice.data[127-j], slice.data[191-j], slice.data[255-j], 0b01);    
                 }
-                outputInterface.showUntil(targetSliceEndTime);
+                totalWaitLSB += outputInterface.showUntil(targetSliceEndTime);
             }
         }
-        printf("frame sum: %ld\n", frameSum);
+        auto avgWaitLSB = (double) totalWaitLSB/ (double) sliceCount;
+        auto avgWaitMSB = (double) totalWaitMSB/ (double) sliceCount;
+
+        printf("avg LSB wait time: %f, avg MSB wait time: %f, compensation: %d\n", avgWaitLSB, avgWaitMSB, sliceColorPushTimeCompensation);
+        int expectedMSBAvgWait = (avgWaitLSB + avgWaitMSB) * gammaCorrectionRatio;
+
+        int diff = expectedMSBAvgWait - avgWaitMSB;
+
+        sliceColorPushTimeCompensation += diff*10;
+
         frameNum++;
     }
 }

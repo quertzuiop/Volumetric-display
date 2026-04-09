@@ -7,7 +7,7 @@ using namespace chrono_literals;
 const double targetFps = 24.;
 const int dataPin = 16;
 const auto minOnTime = 10ms;
-const float minFps = 0.5;
+const float minFps = 0.2;
 
 int main() {
     volatile ShmLayout* shmPointer = openShm("vdshm");

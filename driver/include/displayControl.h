@@ -24,7 +24,7 @@ class AddressInterface {
 class OutputInterface {
     public:
         int latchPin, oePin;
-        void showUntil(int64_t stopTime);
+        int showUntil(int64_t stopTime);
         void enableOutput(bool enable);
         void latch();
     OutputInterface(int latchPin_, int oePin_);
